@@ -27,11 +27,11 @@ public class LoginPage extends Initialize {
             ExtentTestManager.getTest().info("Attempting login for user: " + getConfigValue("LoginUserName"));
             commonMethods.editAField(driver, getTestObjectPF("IBP_edtAccess"),strRestrictedAccess);
             commonMethods.click(driver, getTestObjectPF("IBP_btnSubmitAccess"));
-            commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_acceptCookies"), 5000);
-            boolean cookies = commonMethods.IsDisplayed(driver, getTestObjectPF("IBP_acceptCookies"));
-            if (cookies) {
-                commonMethods.mouseHoverOnObjectAndClick(driver, getTestObjectPF("IBP_acceptCookies"));
-            }
+//            commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_acceptCookies"), 5000);
+//            boolean cookies = commonMethods.IsDisplayed(driver, getTestObjectPF("IBP_acceptCookies"));
+//            if (cookies) {
+//                commonMethods.mouseHoverOnObjectAndClick(driver, getTestObjectPF("IBP_acceptCookies"));
+//            }
             commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_edtUserName"), 5000);
             commonMethods.editAField(driver, getTestObjectPF("IBP_edtUserName"), getConfigValue("LoginUserName"));
             commonMethods.editAField(driver, getTestObjectPF("IBP_edtPassword"), getConfigValue("LoginPassword"));

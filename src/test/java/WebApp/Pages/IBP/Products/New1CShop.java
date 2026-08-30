@@ -82,19 +82,21 @@ public class New1CShop extends Initialize {
 
     		ExtentTestManager.getTest().info("Starting New1CShop flow for: " + "testCaseName");
     //to checking empty row to update Quote and policy Number			
-    		int rowIndex = commonMethods.getNextAvailableRowIndex("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "Shop");
+    		int rowIndex = commonMethods.getNextAvailableRowIndex(Initialize.getQPNumbersFilePath(), "Shop");
     //Welcome Page
     		commonMethods.scrollThePage(driver,"DOWN");
     		commonMethods.mouseHoverOnObjectAndClick(driver, getTestObjectPF("IBP_mouseoverToShop"));
+    		commonMethods.click(driver, getTestObjectPF("IBP_ShopgetQuote"));
+    		
     //Page1-----------------------------------------------------------------------------------------------
     		commonMethods.click(driver, getTestObjectPF("IBP_AddClientManually"));
     		commonMethods.editAField(driver, getTestObjectPF("IBP_CompanyName"),strCompanyName);
     		Thread.sleep(5000);
-    		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-    		Thread.sleep(15000);
-    		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 5000);
-    		commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
+//    		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
+//    		Thread.sleep(15000);
+//    		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
+//    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 5000);
+//    		commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
     		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 5000);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_CorrespondAdd"),strCorrespondanceAddress);
     		commonMethods.click(driver, getTestObjectPF("IBP_ClklookupAdd"));
@@ -105,7 +107,7 @@ public class New1CShop extends Initialize {
     		commonMethods.click(driver, getTestObjectPF("IBP_ClkdrpdwnAgencyNumber"));
     		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 5000);
     		commonMethods.click(driver, getTestObjectPF("IBP_sltAgencyNumber"));
-    		commonMethods.editAField(driver, getTestObjectPF("IBP_Coverstartdate"),strCoverStartDate);
+//    		commonMethods.editAField(driver, getTestObjectPF("IBP_Coverstartdate"),strCoverStartDate);
     		commonMethods.click(driver, getTestObjectPF("IBP_drpdwnTrade1"));
     		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_FillTrade1"), 5000);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_FillTrade1"), strTrade1);
@@ -127,7 +129,12 @@ public class New1CShop extends Initialize {
     		JiraIntegration.addEvidencePath(TestCaseName, screenshotPath);
     		
     		commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-    //Page3-------------------------------------------------------------------------------------------------	
+    //Page3-------------------------------------------------------------------------------------------------
+       		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
+//    		Thread.sleep(10000);
+//    		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
+    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 5000);
+    		commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
     		commonMethods.editAField(driver, getTestObjectPF("IBP_NumberofEmployee"), strNumberofEmployees);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_Annualturnover"), strAnnualTurnover);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_AnnualWageRoll"), strEstimatedAnnualWageRoll);
@@ -165,9 +172,9 @@ public class New1CShop extends Initialize {
     		String QuoteRef = driver.findElement(By.xpath("//p[text()='Quote Ref']/span")).getText();
     		System.out.println("Obtained Quote Ref ==>" + QuoteRef);
     		ExtentTestManager.getTest().info("Quote Ref captured: " + QuoteRef);
-    		//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "Shop", rowIndex, "QuoteNumber", QuoteRef);
-    		commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "Shop", rowIndex, "TestCaseName", TestCaseName);
-    		commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "Shop", rowIndex, "QuoteNumber", QuoteRef);
+    		//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "QuoteNumber", QuoteRef);
+    		commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "TestCaseName", TestCaseName);
+    		commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "QuoteNumber", QuoteRef);
     		//commonMethods.fullScreenPrint(driver, testData, "New 1 C Shop", "Quote_Page");	
     		screenshotPath = commonMethods.fullScreenPrint(driver, testData, "New 1 C Shop", "Quote Page");
     		JiraIntegration.addEvidencePath(TestCaseName, screenshotPath);
@@ -185,7 +192,7 @@ public class New1CShop extends Initialize {
     	try {
     		System.out.println(">>> Inside createPolicy()");
     		 //to checking empty row to update Quote and policy Number			
-    		int rowIndex = commonMethods.getNextAvailableRowIndex("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "Shop");
+    		int rowIndex = commonMethods.getNextAvailableRowIndex(Initialize.getQPNumbersFilePath(), "Shop");
     		String screenshotPath;
     		String strCompanyName = testData.get("CompanyName");
     		String strPaymentType = testData.get("PaymentType");
@@ -246,11 +253,11 @@ public class New1CShop extends Initialize {
     					ExtentTestManager.getTest().info("Policy Number captured: " + PolicyNo);
     					//commonMethods.policyNumber = PolicyNo; // Store it for later use
     					//commonMethods.fullScreenPrint(driver, testData, "New 1 C Shop", "Policy_Number_Page");
-    					//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "Shop", rowIndex, "PolicyNumber", PolicyNo);
+    					//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "PolicyNumber", PolicyNo);
     					screenshotPath = commonMethods.fullScreenPrint(driver, testData, "New 1 C Shop", "Policy_Number Page");
     		    		JiraIntegration.addEvidencePath(TestCaseName, screenshotPath);
     					
-    					commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "Shop", rowIndex, "PolicyNumber", PolicyNo);
+    					commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "PolicyNumber", PolicyNo);
     					System.out.println("-----Property Owner NB created Successfully-----");			
     		}
     		catch (Exception e) {

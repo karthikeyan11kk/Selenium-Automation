@@ -267,7 +267,12 @@ public class Common_Methods  extends Initialize{
 	        Date date = new Date();
 	        System.out.println(formatter.format(date));
 
-	        Initialize.getWebDriver().navigate().to(URL); // launch Browser with the URL
+	        // Was calling both navigate().to(URL) AND get(URL) back-to-back -
+	        // two separate navigations to the same URL. For a normal static
+	        // page that's just wasteful, but for an SSO/OAuth redirect chain
+	        // (state/nonce tokens, in-flight redirects) restarting the
+	        // navigation mid-flight like that can break the handshake outright -
+	        // one call is both correct and sufficient.
 	        Initialize.getWebDriver().get(URL);
 
 	        ReportManager.logToExtent("INFO", "Action logged");

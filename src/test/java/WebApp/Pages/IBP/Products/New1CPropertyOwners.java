@@ -88,7 +88,7 @@ public class New1CPropertyOwners extends Initialize {
 	    		String strAccountNumber = testData.get("AccountNumber");
 
 	    //to checking empty row to update Quote and policy Number		
-	    		int rowIndex = commonMethods.getNextAvailableRowIndex("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO");	
+	    		int rowIndex = commonMethods.getNextAvailableRowIndex(Initialize.getQPNumbersFilePath(), "PO");	
 	    //Welcome Page------------------------------------------------------------------------------------------------
 	    				if(strExecution.equals("Yes")) {
 	    				commonMethods.scrollThePage(driver,"DOWN");
@@ -176,10 +176,10 @@ public class New1CPropertyOwners extends Initialize {
 	    	//QuotePage--------------------------------------------------------------------------------------------------
 	    			String QuoteRef = driver.findElement(By.xpath("//p[text()='Quote Ref']/span")).getText();
 	    			System.out.println("Obtained Quote Ref ==>" + QuoteRef);
-	    			//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "QuoteNumber", QuoteRef);
-	    			//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
-	    			commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "TestCaseName", TestCaseName);
-	    			commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "QuoteNumber", QuoteRef);
+	    			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
+	    			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
+	    			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "TestCaseName", TestCaseName);
+	    			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
 	    			commonMethods.fullScreenPrint(driver, testData, "New 1 C Property Owners", "Quote_Page");		
 	    		
 	    	}
@@ -247,7 +247,7 @@ public class New1CPropertyOwners extends Initialize {
 	    		String strAccountNumber = testData.get("AccountNumber");
 
 	    //to checking empty row to update Quote and policy Number		
-	    		int rowIndex = commonMethods.getNextAvailableRowIndex("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO");	
+	    		int rowIndex = commonMethods.getNextAvailableRowIndex(Initialize.getQPNumbersFilePath(), "PO");	
 	    //Welcome Page------------------------------------------------------------------------------------------------
 	    				if(strExecution.equals("Yes")) {
 	    				commonMethods.scrollThePage(driver,"DOWN");
@@ -335,10 +335,10 @@ public class New1CPropertyOwners extends Initialize {
 	    	//QuotePage--------------------------------------------------------------------------------------------------
 	    			String QuoteRef = driver.findElement(By.xpath("//p[text()='Quote Ref']/span")).getText();
 	    			System.out.println("Obtained Quote Ref ==>" + QuoteRef);
-	    			//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "QuoteNumber", QuoteRef);
-	    			//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
-	    			commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "TestCaseName", TestCaseName);
-	    			commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "QuoteNumber", QuoteRef);
+	    			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
+	    			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
+	    			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "TestCaseName", TestCaseName);
+	    			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
 	    			commonMethods.fullScreenPrint(driver, testData, "New 1 C Property Owners", "Quote_Page");	
 	    		
 	    	//Converting Quote into NB policy----------------------------------------------------------------------------	
@@ -384,10 +384,10 @@ public class New1CPropertyOwners extends Initialize {
 	    						String PolicyNo = PolicyNumber.substring(14);
 	    						System.out.println("Policy Number ==>" + PolicyNo);
 	    						commonMethods.fullScreenPrint(driver, testData, "New 1 C Property Owners", "Policy_Number_Page");
-	    						//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "PolicyNumber", PolicyNo);
-	    						//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, TcName, "PolicyNumber", PolicyNo);
+	    						//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "PolicyNumber", PolicyNo);
+	    						//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "PolicyNumber", PolicyNo);
 	    						
-	    						commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "PolicyNumber", PolicyNo);
+	    						commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "PolicyNumber", PolicyNo);
 	    						System.out.println("-----Property Owner NB created Successfully-----");
 	    						commonMethods.scrollThePage(driver, "Top");
 	    						commonMethods.click(driver, getTestObjectPF("IBP_HomeButton"));
@@ -469,7 +469,7 @@ public class New1CPropertyOwners extends Initialize {
 		String strAccountNumber = testData.get("AccountNumber");
 
 //to checking empty row to update Quote and policy Number		
-		int rowIndex = commonMethods.getNextAvailableRowIndex("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO");	
+		int rowIndex = commonMethods.getNextAvailableRowIndex(Initialize.getQPNumbersFilePath(), "PO");	
 //Welcome Page------------------------------------------------------------------------------------------------
 				if(strExecution.equals("Yes")) {
 				commonMethods.scrollThePage(driver,"DOWN");
@@ -557,10 +557,10 @@ public class New1CPropertyOwners extends Initialize {
 	//QuotePage--------------------------------------------------------------------------------------------------
 			String QuoteRef = driver.findElement(By.xpath("//p[text()='Quote Ref']/span")).getText();
 			System.out.println("Obtained Quote Ref ==>" + QuoteRef);
-			//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "QuoteNumber", QuoteRef);
-			//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
-			commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "TestCaseName", TestCaseName);
-			commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "QuoteNumber", QuoteRef);
+			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
+			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
+			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "TestCaseName", TestCaseName);
+			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
 			commonMethods.fullScreenPrint(driver, testData, "New 1 C Property Owners", "Quote_Page");	
 		}
 	//Converting Quote into NB policy----------------------------------------------------------------------------	
@@ -606,10 +606,10 @@ public class New1CPropertyOwners extends Initialize {
 						String PolicyNo = PolicyNumber.substring(14);
 						System.out.println("Policy Number ==>" + PolicyNo);
 						commonMethods.fullScreenPrint(driver, testData, "New 1 C Property Owners", "Policy_Number_Page");
-						//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "PolicyNumber", PolicyNo);
-						//commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, TcName, "PolicyNumber", PolicyNo);
+						//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "PolicyNumber", PolicyNo);
+						//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "PolicyNumber", PolicyNo);
 						
-						commonMethods.excelWriteMethod("C:\\Users\\UKAmarSapkal\\BRM_Agency\\New1C\\TestData\\Q&P-Numbers.xls", "PO", rowIndex, "PolicyNumber", PolicyNo);
+						commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "PolicyNumber", PolicyNo);
 						System.out.println("-----Property Owner NB created Successfully-----");
 						commonMethods.scrollThePage(driver, "Top");
 						commonMethods.click(driver, getTestObjectPF("IBP_HomeButton"));

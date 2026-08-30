@@ -11,12 +11,6 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import org.testng.TestListenerAdapter;
-import org.testng.TestNG;
-import org.testng.xml.XmlSuite;
-import org.testng.xml.XmlTest;
-import org.testng.xml.XmlClass;
-
 import com.aventstack.extentreports.ExtentReports;
 
 import util.Initialize;
@@ -26,7 +20,6 @@ import util.ExtentReports.ExtentTestManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 
 public class JiraTestExecutor extends Initialize {
@@ -63,26 +56,32 @@ public class JiraTestExecutor extends Initialize {
         }
     }
 
-    /** Execute Selenium test dynamically using TestNG with JiraKeyFilter */
-    public static TestListenerAdapter executeTest(String jiraKey) {
-        System.out.println("▶ Executing TestNG for Jira Key: " + jiraKey);
-        System.setProperty("JiraKeyFilter", jiraKey);
+    /**
+     * Execute the Cucumber scenarios tagged for this Jira key.
+     *
+     * Replaces the old TestNG-XmlSuite-around-MultiProductTest approach: each
+     * Scenario Outline in product_flow.feature that maps to a Jira test issue
+     * is tagged @JIRA-<key> (see the feature file), so instead of filtering
+     * an Excel DataProvider via a "JiraKeyFilter" system property, we filter
+     * Cucumber scenarios by tag and run them via the Cucumber CLI in-process.
+     *
+     * Returns true if every scenario for that tag passed (exit code 0).
+     */
+    public static boolean executeTest(String jiraKey) {
+        System.out.println("Executing Cucumber scenarios tagged @JIRA-" + jiraKey);
 
-        XmlSuite suite = new XmlSuite();
-        suite.setName("DynamicSuite");
+        String[] args = new String[]{
+                "--glue", "hooks",
+                "--glue", "stepdefinitions",
+                "--tags", "@JIRA-" + jiraKey,
+                "--plugin", "pretty",
+                "--plugin", "html:target/cucumber-report/jira-" + jiraKey + ".html",
+                "--plugin", "json:target/cucumber-report/jira-" + jiraKey + ".json",
+                "src/test/resources/features"
+        };
 
-        XmlTest test = new XmlTest(suite);
-        test.setName("DynamicTest");
-        test.setXmlClasses(Collections.singletonList(new XmlClass(MultiProductTest.class))); // ✅ Class reference
-
-        TestNG testNG = new TestNG();
-        testNG.setXmlSuites(Collections.singletonList(suite));
-
-        TestListenerAdapter tla = new TestListenerAdapter();
-        testNG.addListener(tla);
-        testNG.run();
-
-        return tla;
+        byte exitCode = io.cucumber.core.cli.Main.run(args, Thread.currentThread().getContextClassLoader());
+        return exitCode == 0;
     }
 
     /** Update Jira with execution status and optional evidence */
@@ -154,8 +153,7 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
     public static void main(String[] args) throws Exception {
         ExtentReports extent = null;
         try {
-        	System.out.println("Class exists? " + MultiProductTest.class.getName());
-            // Load config only (driver/login is handled in MultiProductTest @BeforeSuite)
+            // Load config only (driver/login is now handled in hooks.Hooks per Scenario)
             Initialize.loadConfig();
 
             // Initialize ExtentReports
@@ -167,11 +165,8 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
             List<String> jiraTests = fetchJiraTests();
             for (String jiraKey : jiraTests) {
                 try {
-                    // Run the suite for this Jira key
-                    TestListenerAdapter tla = executeTest(jiraKey);
-
-                    // Decide PASS/FAIL based on listener counters
-                    boolean passed = tla.getPassedTests().size() > 0 && tla.getFailedTests().isEmpty();
+                    // Run the tagged Cucumber scenarios for this Jira key
+                    boolean passed = executeTest(jiraKey);
                     String status = passed ? "PASS" : "FAIL";
 
                     updateJiraStatus(jiraKey, status);

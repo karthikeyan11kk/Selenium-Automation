@@ -11,8 +11,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.release>20</maven.compiler.release>
     </properties>
 
     <build>
@@ -23,13 +22,17 @@
     <artifactId>maven-surefire-plugin</artifactId>
     <version>3.0.0-M9</version>
     <configuration>
+        <!-- was "SuiteICE.xml" in the original pom, which didn't exist in the
+             repo (only SuiteNIG.xml did) - pointed at the new Cucumber-TestNG
+             wiring in testng.xml instead. -->
         <suiteXmlFiles>
-            <suiteXmlFile>SuiteICE.xml</suiteXmlFile>
+            <suiteXmlFile>testng.xml</suiteXmlFile>
         </suiteXmlFiles>
         <systemPropertyVariables>
-            <javax.net.ssl.trustStore>C:/Users/UKAmarSapkal/BRM_Agency/cacerts</javax.net.ssl.trustStore>
-            <javax.net.ssl.trustStorePassword>changeit</javax.net.ssl.trustStorePassword>
-        </systemPropertyVariables>
+						<javax.net.ssl.trustStore>
+							C:\Users\P00962\New-eclipse-workspace\Intact-BDD\Certs\cacerts</javax.net.ssl.trustStore>
+						<javax.net.ssl.trustStorePassword>changeit</javax.net.ssl.trustStorePassword>
+		</systemPropertyVariables>
     </configuration>
 </plugin>
 
@@ -37,28 +40,31 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <release>20</release>
+                    <!-- Nothing in this project uses Lombok, but some
+                         Lombok jar was getting picked up as an annotation
+                         processor and failing against newer JDKs' module
+                         system (JavacProcessingEnvironment access error).
+                         -proc:none disables annotation processing outright,
+                         which this project doesn't need anyway. -->
+                    <compilerArgs>
+                        <arg>-proc:none</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>
     </build>
     
     <repositories>
-		
-		
-
     <repository>
         <id>central</id>
         <url>https://repo.maven.apache.org/maven2</url>
     </repository>
-
-
-		
-    <repository>
-        <id>atlassian-public</id>
-        <url>https://packages.atlassian.com/maven/repository/public</url>
-    </repository>
+    <!-- atlassian-public repository removed: it only existed to resolve
+         com.atlassian.jira:jira-rest-java-client-core/api below, which
+         nothing in the codebase actually imports (JiraIntegration.java talks
+         to Jira/Xray with plain httpclient5 REST calls, not this SDK). The
+         repo was failing SSL cert validation and blocking the whole build. -->
 </repositories>
     
     
@@ -66,6 +72,18 @@
     
 
     <dependencies>
+        <!-- Cucumber BDD -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>7.18.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-testng</artifactId>
+            <version>7.18.1</version>
+        </dependency>
+
         <!-- Selenium -->
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
@@ -118,7 +136,7 @@
         <dependency>
             <groupId>io.github.bonigarcia</groupId>
             <artifactId>webdrivermanager</artifactId>
-            <version>5.7.0</version>
+            <version>5.9.2</version>
         </dependency>
 
         <!-- PDFBox for PDF operations -->
@@ -162,17 +180,9 @@
     <version>2.20.0</version>
 </dependency>
 
-<dependency>
-    <groupId>com.atlassian.jira</groupId>
-    <artifactId>jira-rest-java-client-core</artifactId>
-    <version>5.2.2</version>
-</dependency>
-
-<dependency>
-    <groupId>com.atlassian.jira</groupId>
-    <artifactId>jira-rest-java-client-api</artifactId>
-    <version>5.2.2</version>
-</dependency>
+<!-- com.atlassian.jira:jira-rest-java-client-core/api removed - unused
+     (see the repositories section above) and unresolvable without the
+     atlassian-public repo. -->
 
 <dependency>
     <groupId>org.apache.httpcomponents</groupId>
