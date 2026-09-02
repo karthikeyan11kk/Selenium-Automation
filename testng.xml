@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
-<suite name="MultiProductSuite">
-    <test name="Cucumber_Regression">
+<suite name="IntactAutomationSuite">
+    <test name="Regression">
         <classes>
-            <class name="runners.TestRunner"/>
+            <class name="runner.TestRunner"/>
         </classes>
     </test>
+
+    <!-- runner.FailedTestRunner intentionally NOT wired in here anymore.
+         Automatically re-running a "failed" scenario is fine for tests that
+         only READ state, but this suite creates real Shop/PO quotes and
+         policies - blindly retrying ANY failure (even a genuine one, e.g.
+         a timeout partway through) risks submitting a second real policy
+         for the same test case. Run FailedTestRunner manually and only
+         after checking WHY a scenario failed, e.g.:
+           mvn test -Dtest=FailedTestRunner
+         See README.md for the full explanation. -->
 </suite>

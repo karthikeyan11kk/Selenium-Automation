@@ -1,15 +1,15 @@
 package stepdefinitions;
 
-import WebApp.Pages.IBP.Products.New1CPropertyOwners;
-import WebApp.Pages.IBP.Products.New1CShop;
-import framework.ScenarioContext;
+import pageclasses.New1CPropertyOwners;
+import pageclasses.New1CShop;
+import testutils.ScenarioContext;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import util.Common_Methods;
-import util.Initialize;
-import util.JiraIntegration;
-import util.ExtentReports.ExtentTestManager;
+import utils.Common_Methods;
+import utils.Initialize;
+import utils.JiraIntegration;
+import utils.ExtentReporter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ public class ProductFlowSteps {
         String product = testData.get("ProductType");
         String jiraKey = testData.get("JiraKey");
 
-        ExtentTestManager.startTest(testCaseName + " - " + product, "Jira Key: " + jiraKey);
+        ExtentReporter.startTest(testCaseName + " - " + product, "Jira Key: " + jiraKey);
     }
 
     @When("I execute the product flow for test case {string}")
@@ -52,12 +52,13 @@ public class ProductFlowSteps {
 
         if (!"Yes".equalsIgnoreCase(executionFlag)) {
             System.out.println("Skipping test case: " + testCaseName + " (Execution flag is not Yes)");
-            ExtentTestManager.getTest().info("Skipped: Execution flag is not Yes");
+            ExtentReporter.getTest().info("Skipped: Execution flag is not Yes");
             return;
         }
 
         boolean quoteFlag = "Yes".equalsIgnoreCase(testData.get("Quote"));
         boolean policyFlag = "Yes".equalsIgnoreCase(testData.get("Policy"));
+        boolean renewalFlag = "Yes".equalsIgnoreCase(testData.get("Renewal"));
         boolean jiraEnabled = "Yes".equalsIgnoreCase(testData.get("JiraExecution"));
 
         List<Map<String, String>> stepResults = new ArrayList<>();
@@ -73,6 +74,9 @@ public class ProductFlowSteps {
         try {
             if ("Shop".equalsIgnoreCase(product)) {
                 New1CShop flow = new New1CShop();
+                System.out.println("-----------------");
+                System.out.println(renewalFlag);
+                System.out.println("-----------------");
                 if (policyFlag) {
                     Map<String, String> combinedFlags = new HashMap<>(testData);
                     combinedFlags.put("Quote", "Yes");
@@ -80,10 +84,16 @@ public class ProductFlowSteps {
                     flow.executeScenario(Initialize.getWebDriver(), combinedFlags);
                 } else if (quoteFlag) {
                     flow.executeScenario(Initialize.getWebDriver(), setFlag(testData, "Policy", "No"));
-                } else {
-                    ExtentTestManager.getTest().warning("Neither Quote nor Policy is requested for: " + testCaseName);
+                } 
+                else if (renewalFlag){
+                	flow.executeScenario(Initialize.getWebDriver(), setFlag(testData, "Renewal", "No"));	
                 }
-            } else if ("PO".equalsIgnoreCase(product)) {
+                else {
+                	 ExtentReporter.getTest().warning("Neither Quote nor Policy is requested for: " + testCaseName);
+                }
+                   
+                }
+             else if ("PO".equalsIgnoreCase(product)) {
                 New1CPropertyOwners flow = new New1CPropertyOwners();
                 if (policyFlag) {
                     Map<String, String> combinedFlags = new HashMap<>(testData);
@@ -93,21 +103,22 @@ public class ProductFlowSteps {
                 } else if (quoteFlag) {
                     flow.executeScenario(Initialize.getWebDriver(), setFlag(testData, "Policy", "No"));
                 } else {
-                    ExtentTestManager.getTest().warning("Neither Quote nor Policy is requested for: " + testCaseName);
+                    ExtentReporter.getTest().warning("Neither Quote nor Policy is requested for: " + testCaseName);
                 }
             } else {
-                ExtentTestManager.getTest().warning("Unknown product type: " + product);
+                ExtentReporter.getTest().warning("Unknown product type: " + product);
             }
 
             if (!jiraEnabled) {
                 System.out.println("JiraExecution=No for " + testCaseName + " - skipping all Jira/Xray reporting.");
             } else if (testExecKey != null && !testExecKey.isBlank()) {
                 try {
-                    JiraIntegration.updateXrayStepResults(testExecKey, jiraKey, stepResults);
+
+                    JiraIntegration.updateXrayManualSteps(testExecKey, jiraKey, stepResults);
                     System.out.println("Xray step results updated for " + jiraKey + " in " + testExecKey);
                 } catch (Exception xrWarn) {
                     System.err.println("Xray update failed: " + xrWarn.getMessage());
-                    ExtentTestManager.getTest().warning("Xray update failed: " + xrWarn.getMessage());
+                    ExtentReporter.getTest().warning("Xray update failed: " + xrWarn.getMessage());
                 }
             } else {
                 System.out.println("No TestExecutionKey provided; skipping Xray step update for " + jiraKey);
@@ -120,7 +131,7 @@ public class ProductFlowSteps {
             }
 
             // Final PASS/FAIL Extent marking + Jira bug/comment handling now
-            // happens in hooks.Hooks.afterScenario (ported from
+            // happens in stepdefinitions.Hooks.afterScenario (ported from
             // ITestListener.onTestFailure/onTestSuccess), which reads
             // ScenarioContext to know the current tcName/jiraKey/testExecKey.
 
@@ -131,7 +142,7 @@ public class ProductFlowSteps {
             }
             if (jiraEnabled && testExecKey != null && !testExecKey.isBlank()) {
                 try {
-                    JiraIntegration.updateXrayStepResults(testExecKey, jiraKey, stepResults);
+                    JiraIntegration.updateXrayManualSteps(testExecKey, jiraKey, stepResults);
                     System.out.println("Xray step results updated as FAIL for " + jiraKey);
                 } catch (Exception xrEx) {
                     System.err.println("Xray update failed: " + xrEx.getMessage());
@@ -143,7 +154,7 @@ public class ProductFlowSteps {
                 try {
                     JiraIntegration.attachScreenshot(jiraKey, screenshotPath);
                 } catch (Exception jiraEx) {
-                    ExtentTestManager.getTest().warning("Jira update failed on error: " + jiraEx.getMessage());
+                    ExtentReporter.getTest().warning("Jira update failed on error: " + jiraEx.getMessage());
                     System.err.println("Jira update failed during failure handling: " + jiraEx);
                 }
             }
@@ -160,11 +171,11 @@ public class ProductFlowSteps {
     }
 
     /**
-     * Delegates to framework.TestDataLookup (shared with Hooks, which uses
+     * Delegates to testutils.TestDataLookup (shared with Hooks, which uses
      * it to decide whether to launch a browser at all for this scenario).
      */
     private Map<String, String> findRowByTestCaseName(String testCaseName) throws Exception {
-        Map<String, String> row = framework.TestDataLookup.findRowByTestCaseName(testCaseName);
+        Map<String, String> row = testutils.TestDataLookup.findRowByTestCaseName(testCaseName);
         if (row == null) {
             throw new RuntimeException("No row found for TestCaseName=" + testCaseName
                     + " in any of the activeSheets: " + Initialize.getConfigValue("activeSheets"));

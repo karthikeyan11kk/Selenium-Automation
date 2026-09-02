@@ -13,9 +13,9 @@ import org.json.JSONObject;
 
 import com.aventstack.extentreports.ExtentReports;
 
-import util.Initialize;
-import util.JiraIntegration;
-import util.ExtentReports.ExtentTestManager;
+import utils.Initialize;
+import utils.JiraIntegration;
+import utils.ExtentReporter;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -135,8 +135,8 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
 
     // 4) Extent link (unchanged)
     String jiraLink = Initialize.getConfigValue("JiraURL") + "browse/" + jiraKey;
-    if (ExtentTestManager.getTest() != null) {
-        ExtentTestManager.getTest().info("Jira Issue: <a href='" + jiraLink + "'>" + jiraKey + "</a>");
+    if (ExtentReporter.getTest() != null) {
+        ExtentReporter.getTest().info("Jira Issue: <a href='" + jiraLink + "'>" + jiraKey + "</a>");
     }
     System.out.println("✅ Jira updated for " + jiraKey + " with status: " + status);
 }
@@ -144,8 +144,8 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
 
     public static void logJiraLink(String jiraKey) {
         String jiraLink = jiraBaseUrl() + "browse/" + jiraKey;
-        if (ExtentTestManager.getTest() != null) {
-            ExtentTestManager.getTest().info("Jira Issue: <a href='" + jiraLink + "'>" + jiraKey + "</a>");
+        if (ExtentReporter.getTest() != null) {
+            ExtentReporter.getTest().info("Jira Issue: <a href='" + jiraLink + "'>" + jiraKey + "</a>");
         }
     }
 
@@ -153,14 +153,14 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
     public static void main(String[] args) throws Exception {
         ExtentReports extent = null;
         try {
-            // Load config only (driver/login is now handled in hooks.Hooks per Scenario)
+            // Load config only (driver/login is now handled in stepdefinitions.Hooks per Scenario)
             Initialize.loadConfig();
 
             // Initialize ExtentReports
             extent = new ExtentReports();
             String reportPath = System.getProperty("user.dir") + "/reports/JiraExecutionReport.html";
-            ExtentTestManager.setExtent(extent, reportPath);
-            ExtentTestManager.startTest("Jira Execution", "Automated Jira Test Run");
+            ExtentReporter.setExtent(extent, reportPath);
+            ExtentReporter.startTest("Jira Execution", "Automated Jira Test Run");
 
             List<String> jiraTests = fetchJiraTests();
             for (String jiraKey : jiraTests) {
@@ -173,20 +173,20 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
                     logJiraLink(jiraKey);
 
                     if (passed) {
-                        ExtentTestManager.getTest().pass("Test Passed for Jira Key: " + jiraKey);
+                        ExtentReporter.getTest().pass("Test Passed for Jira Key: " + jiraKey);
                     } else {
-                        ExtentTestManager.getTest().fail("Test Failed for Jira Key: " + jiraKey);
+                        ExtentReporter.getTest().fail("Test Failed for Jira Key: " + jiraKey);
                     }
                 } catch (Exception e) {
                     updateJiraStatus(jiraKey, "FAIL");
                     logJiraLink(jiraKey);
-                    ExtentTestManager.getTest().fail("Test Failed for Jira Key: " + jiraKey + " | Error: " + e.getMessage());
+                    ExtentReporter.getTest().fail("Test Failed for Jira Key: " + jiraKey + " | Error: " + e.getMessage());
                     System.err.println("❌ Execution failed for " + jiraKey + ": " + e.getMessage());
                 }
             }
         } finally {
             // Flush report
-            ExtentTestManager.endTest();
+            ExtentReporter.endTest();
             if (extent != null) {
                 extent.flush();
             }

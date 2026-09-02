@@ -225,6 +225,16 @@
 </dependency>
    
     
+        <!-- Email the Extent report to a distribution list after the suite
+             finishes (see util.MailReportSender). Angus Mail is the actively
+             maintained successor to javax.mail/com.sun.mail, works with
+             standard SMTP servers (Gmail, Office365, custom relays) via the
+             jakarta.mail.* API. -->
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>2.0.3</version>
+        </dependency>
     </dependencies>
     
 </project>
