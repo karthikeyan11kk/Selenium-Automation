@@ -1,5 +1,9 @@
 package stepdefinitions;
 
+import org.assertj.core.api.Assertions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import pageclasses.New1CPropertyOwners;
 import pageclasses.New1CShop;
 import testutils.ScenarioContext;
@@ -9,6 +13,7 @@ import io.cucumber.java.en.When;
 import utils.Common_Methods;
 import utils.Initialize;
 import utils.JiraIntegration;
+import utils.QPNumbersLogger;
 import utils.ExtentReporter;
 
 import java.util.ArrayList;
@@ -25,10 +30,13 @@ import java.util.Map;
  * @DataProvider.
  */
 public class ProductFlowSteps {
+    private static final Logger log = LoggerFactory.getLogger(ProductFlowSteps.class);
+
 
     private Map<String, String> testData;
 
     @Given("test case {string} data is loaded")
+    @Given("the business data for test case {string} is prepared")
     public void loadTestData(String testCaseName) throws Exception {
         testData = findRowByTestCaseName(testCaseName);
         ScenarioContext.set(testData);
@@ -40,18 +48,23 @@ public class ProductFlowSteps {
     }
 
     @When("I execute the product flow for test case {string}")
+    @When("I request a Shop quote for test case {string}")
+    @When("I convert the Shop quote to a bound policy for test case {string}")
+    @When("I process a Shop policy renewal for test case {string}")
+    @When("I request a Property Owners quote for test case {string}")
+    @When("I convert the Property Owners quote to a bound policy for test case {string}")
     public void executeProductFlow(String testCaseName) throws Exception {
         String product = testData.get("ProductType");
         String executionFlag = testData.get("Execution");
         String jiraKey = testData.get("JiraKey");
         String testExecKey = testData.get("TestExecutionKey");
 
-        System.out.println("\n==============================");
-        System.out.println("Starting Test Case: " + testCaseName + " | Product: " + product + " | Jira: " + jiraKey);
-        System.out.println("==============================");
+        log.info("\n==============================");
+        log.info("Starting Test Case: " + testCaseName + " | Product: " + product + " | Jira: " + jiraKey);
+        log.info("==============================");
 
         if (!"Yes".equalsIgnoreCase(executionFlag)) {
-            System.out.println("Skipping test case: " + testCaseName + " (Execution flag is not Yes)");
+            log.info("Skipping test case: " + testCaseName + " (Execution flag is not Yes)");
             ExtentReporter.getTest().info("Skipped: Execution flag is not Yes");
             return;
         }
@@ -107,24 +120,24 @@ public class ProductFlowSteps {
             }
 
             if (!jiraEnabled) {
-                System.out.println("JiraExecution=No for " + testCaseName + " - skipping all Jira/Xray reporting.");
+                log.info("JiraExecution=No for " + testCaseName + " - skipping all Jira/Xray reporting.");
             } else if (testExecKey != null && !testExecKey.isBlank()) {
                 try {
 
                     JiraIntegration.updateXrayManualSteps(testExecKey, jiraKey, stepResults);
-                    System.out.println("Xray step results updated for " + jiraKey + " in " + testExecKey);
+                    log.info("Xray step results updated for " + jiraKey + " in " + testExecKey);
                 } catch (Exception xrWarn) {
-                    System.err.println("Xray update failed: " + xrWarn.getMessage());
+                    log.error("Xray update failed: " , xrWarn);
                     ExtentReporter.getTest().warning("Xray update failed: " + xrWarn.getMessage());
                 }
             } else {
-                System.out.println("No TestExecutionKey provided; skipping Xray step update for " + jiraKey);
+                log.info("No TestExecutionKey provided; skipping Xray step update for " + jiraKey);
             }
 
             String screenshotPath = Common_Methods.takeScreenshot(Initialize.getWebDriver());
             if (jiraEnabled && screenshotPath != null && !screenshotPath.isBlank()) {
                 JiraIntegration.addEvidencePath(testCaseName, screenshotPath);
-                System.out.println("Evidence collected for Jira: " + testCaseName + " -> " + screenshotPath);
+                log.info("Evidence collected for Jira: " + testCaseName + " -> " + screenshotPath);
             }
 
             // Final PASS/FAIL Extent marking + Jira bug/comment handling now
@@ -140,9 +153,9 @@ public class ProductFlowSteps {
             if (jiraEnabled && testExecKey != null && !testExecKey.isBlank()) {
                 try {
                     JiraIntegration.updateXrayManualSteps(testExecKey, jiraKey, stepResults);
-                    System.out.println("Xray step results updated as FAIL for " + jiraKey);
+                    log.info("Xray step results updated as FAIL for " + jiraKey);
                 } catch (Exception xrEx) {
-                    System.err.println("Xray update failed: " + xrEx.getMessage());
+                    log.error("Xray update failed: " , xrEx);
                 }
             }
 
@@ -152,7 +165,7 @@ public class ProductFlowSteps {
                     JiraIntegration.attachScreenshot(jiraKey, screenshotPath);
                 } catch (Exception jiraEx) {
                     ExtentReporter.getTest().warning("Jira update failed on error: " + jiraEx.getMessage());
-                    System.err.println("Jira update failed during failure handling: " + jiraEx);
+                    log.error("Jira update failed during failure handling: " + jiraEx);
                 }
             }
 
@@ -161,10 +174,54 @@ public class ProductFlowSteps {
     }
 
     @Then("test case {string} should have completed")
+    @Then("a quote reference should be generated and recorded for test case {string}")
+    @Then("a policy reference should be generated and recorded for test case {string}")
+    @Then("the renewal should complete and be timestamped for test case {string}")
     public void verifyCompleted(String testCaseName) {
         // Pass/fail Extent + Jira reporting for both outcomes is handled in
-        // Hooks.afterScenario, ported from the old ITestListener methods -
-        // nothing else to assert here unless you want an explicit status check.
+        // Hooks.afterScenario. This step's own job - the one it was missing
+        // entirely before - is to verify the actual BUSINESS outcome: that
+        // a quote/policy reference was genuinely captured for this test
+        // case, not just "no exception was thrown". A flow that silently
+        // fails to capture a reference number (without Selenium itself
+        // throwing) would previously pass unnoticed - exactly the class of
+        // bug the SME review flagged.
+        if (testData == null || !"Yes".equalsIgnoreCase(testData.get("Execution"))) {
+            log.info("Execution=No for " + testCaseName + " - nothing to verify, scenario was skipped.");
+            return;
+        }
+
+        String product = testData.get("ProductType");
+        boolean quoteFlag = "Yes".equalsIgnoreCase(testData.get("Quote"));
+        boolean policyFlag = "Yes".equalsIgnoreCase(testData.get("Policy"));
+        boolean renewalFlag = "Yes".equalsIgnoreCase(testData.get("Renewal"));
+
+        if (policyFlag) {
+            String policyNumber = QPNumbersLogger.getRecordedValue(product, testCaseName, "PolicyNumber");
+            Assertions.assertThat(policyNumber)
+                    .as("A policy number should have been captured and recorded for " + testCaseName)
+                    .isNotBlank();
+            log.info("Verified: PolicyNumber '" + policyNumber + "' recorded for " + testCaseName);
+        } else if (quoteFlag) {
+            String quoteNumber = QPNumbersLogger.getRecordedValue(product, testCaseName, "QuoteNumber");
+            Assertions.assertThat(quoteNumber)
+                    .as("A quote reference should have been captured and recorded for " + testCaseName)
+                    .isNotBlank();
+            log.info("Verified: QuoteNumber '" + quoteNumber + "' recorded for " + testCaseName);
+        } else if (renewalFlag) {
+            // Renewal doesn't generate a new Quote/Policy number - the row's
+            // existing PolicyNumber is what gets renewed. Verify a
+            // Timestamp got recorded for this run instead, confirming the
+            // renewal flow actually reached its completion point rather
+            // than silently stopping partway through.
+            String timestamp = QPNumbersLogger.getRecordedValue(product, testCaseName, "Timestamp");
+            Assertions.assertThat(timestamp)
+                    .as("A completion timestamp should have been recorded for the renewal flow " + testCaseName)
+                    .isNotBlank();
+            log.info("Verified: Renewal completion timestamp '" + timestamp + "' recorded for " + testCaseName);
+        } else {
+            log.info("Neither Quote, Policy, nor Renewal was requested for " + testCaseName + " - nothing to verify.");
+        }
     }
 
     /**

@@ -1,34 +1,53 @@
 @regression
-Feature: New1C product Quote & Policy flows
-  As a QA engineer
-  I want each product's Quote/Policy journey to run as a named scenario
-  So that Jira/Xray reporting and Extent reports map 1:1 to a readable test case
+Feature: Shop and Property Owners insurance quotes, policies and renewals
+  As an insurance broker using Acturis
+  I want to create Shop and Property Owners quotes, convert them to bound
+  policies, and process renewals
+  So that customers can obtain and maintain the right cover
 
-  # Each row still reads its data from TestData.xls (sheets listed in
-  # "activeSheets") by TestCaseName - same source of truth as the old
-  # @DataProvider("allData"), just driven by Cucumber instead of TestNG.
-  # Rows where Execution != Yes are skipped by the step definition, exactly
-  # like the old "Yes".equalsIgnoreCase(executionFlag) check.
+  # Login and navigation to the home page happen automatically once per
+  # suite run (Hooks.setUpSuite/@BeforeAll) - not repeated per scenario, so
+  # there's no separate "Given I am logged in" step here to keep pace with.
+  #
+  # Each scenario still reads its full business data (company details,
+  # cover amounts, addresses, etc.) from TestData.xls by TestCaseName rather
+  # than inline in this file - the real data here runs to ~50 fields per
+  # test case (financial figures, addresses, dates), which would make the
+  # feature file itself unreadable if inlined. What IS in this file is the
+  # business intent of each scenario; TestCaseName is the link to its data.
+  # Rows where Execution != Yes in the spreadsheet are skipped automatically.
 
-  @JIRA-PVII-7860
-  Scenario Outline: Execute Shop test case "<TestCaseName>"
-    Given test case "<TestCaseName>" data is loaded
-    When I execute the product flow for test case "<TestCaseName>"
-    Then test case "<TestCaseName>" should have completed
+  @shop @quote
+  Scenario: Generate a new Shop quote
+    Given the business data for test case "Shop_TC01_Quote" is prepared
+    When I request a Shop quote for test case "Shop_TC01_Quote"
+    Then a quote reference should be generated and recorded for test case "Shop_TC01_Quote"
+
+  @shop @policy
+  Scenario: Convert a Shop quote into a bound policy
+    Given the business data for test case "Shop_TC02_Policy" is prepared
+    When I convert the Shop quote to a bound policy for test case "Shop_TC02_Policy"
+    Then a policy reference should be generated and recorded for test case "Shop_TC02_Policy"
+
+  @shop @renewal
+  Scenario Outline: Process a Shop policy renewal
+    Given the business data for test case "<TestCaseName>" is prepared
+    When I process a Shop policy renewal for test case "<TestCaseName>"
+    Then the renewal should complete and be timestamped for test case "<TestCaseName>"
 
     Examples:
       | TestCaseName       |
-      | Shop_TC01_Quote    |
-      | Shop_TC02_Policy   |
       | Shop_TC03_Renewal  |
       | Shop_TC04_Renewal  |
 
-  Scenario Outline: Execute Property Owners test case "<TestCaseName>"
-    Given test case "<TestCaseName>" data is loaded
-    When I execute the product flow for test case "<TestCaseName>"
-    Then test case "<TestCaseName>" should have completed
+  @po @quote
+  Scenario: Generate a new Property Owners quote
+    Given the business data for test case "PO_TC01_Quote" is prepared
+    When I request a Property Owners quote for test case "PO_TC01_Quote"
+    Then a quote reference should be generated and recorded for test case "PO_TC01_Quote"
 
-    Examples:
-      | TestCaseName       |
-      | PO_TC01_Quote      |
-      | PO_TC02_Policy     |
+  @po @policy
+  Scenario: Convert a Property Owners quote into a bound policy
+    Given the business data for test case "PO_TC02_Policy" is prepared
+    When I convert the Property Owners quote to a bound policy for test case "PO_TC02_Policy"
+    Then a policy reference should be generated and recorded for test case "PO_TC02_Policy"

@@ -3,6 +3,9 @@ COMMON FUNCTIONS  LIBRARY - (USER DEFINED FUNCTIONS)
 --------------------------------------------------------------------------------*/
 package utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -69,6 +72,8 @@ import utils.ExtentReporter;
  DATE:
  *************************************************************************************** */
 public class Common_Methods  extends Initialize{
+    private static final Logger log = LoggerFactory.getLogger(Common_Methods.class);
+
 	
 	
 	private static int Index = 0;
@@ -97,11 +102,11 @@ public class Common_Methods  extends Initialize{
 	}
 
 	static String[] splitTestObject(WebDriver driver, String TestObject) throws IOException{
-		System.out.println("Action performed  ---" + Thread.currentThread().getStackTrace()[2].getMethodName()  + "  : Inside a method ---" + Thread.currentThread().getStackTrace()[3].getMethodName());
+		log.info("Action performed  ---" + Thread.currentThread().getStackTrace()[2].getMethodName()  + "  : Inside a method ---" + Thread.currentThread().getStackTrace()[3].getMethodName());
 		String[] sTemp = null;
 		try {
 		 sTemp = (TestObject.split(",",3));
-		System.out.println("Element name "+sTemp[0].toString());
+		log.info("Element name "+sTemp[0].toString());
 		if (sTemp[0].contains("_")) {
 			String[] sTemp1 = sTemp[0].split("_", 2);
 			sTemp[0] = new String(sTemp1[1].trim());
@@ -152,7 +157,7 @@ public class Common_Methods  extends Initialize{
 			break;
 		}
 		case xpath: {
-			System.out.println("inside xpath");
+			log.info("inside xpath");
 			try {
 				Element = Initialize.getWebDriver().findElements(By.xpath(Locators));
 			} catch (Exception e) {
@@ -231,7 +236,7 @@ public class Common_Methods  extends Initialize{
 			break;
 		}
 		case xpath: {
-			System.out.println("inside xpath");
+			log.info("inside xpath");
 			try {
 				Element = Initialize.getWebDriver().findElement(By.xpath(Locators));
 			} catch (Exception e) {
@@ -265,7 +270,7 @@ public class Common_Methods  extends Initialize{
 	    try {
 	        SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yyyy");
 	        Date date = new Date();
-	        System.out.println(formatter.format(date));
+	        log.info(formatter.format(date));
 
 	        // Was calling both navigate().to(URL) AND get(URL) back-to-back -
 	        // two separate navigations to the same URL. For a normal static
@@ -285,7 +290,7 @@ public class Common_Methods  extends Initialize{
 	}
 	
 	public void editAField(WebDriver driver, String TestObject, String Value) throws IOException {
-	    // ✅ Resolve placeholders before sending keys
+	    // Resolve placeholders before sending keys
 	    if (Value != null && Value.toUpperCase().contains("TODAY()")) {
 	        int offset = 0;
 	        try {
@@ -295,17 +300,17 @@ public class Common_Methods  extends Initialize{
 	                offset = -Integer.parseInt(Value.split("-")[1].trim());
 	            }
 	        } catch (NumberFormatException e) {
-	            System.err.println("Invalid offset in placeholder: " + Value);
+	            log.error("Invalid offset in placeholder: " + Value);
 	        }
 	        Calendar cal = Calendar.getInstance();
 	        cal.add(Calendar.DATE, offset);
 	        Value = new SimpleDateFormat("dd/MM/yyyy").format(cal.getTime());
-	        System.out.println("Resolved placeholder in editAField: " + Value);
+	        log.info("Resolved placeholder in editAField: " + Value);
 	    }
 
 	    String[] sTemp = splitTestObject(driver, TestObject);
 	    WebElement we = checkElement(driver, sTemp[1], sTemp[2]);
-	    System.out.println("--Value : " + Value);
+	    log.info("--Value : " + Value);
 
 	    try {
 	        we.isEnabled();
@@ -355,7 +360,7 @@ public class Common_Methods  extends Initialize{
 	    byte[] encodedBytes = Base64.encodeBase64(Data.getBytes());
 	    String STR = new String(encodedBytes);
 
-	    System.out.println("Encrypted Data is - " + STR);
+	    log.info("Encrypted Data is - " + STR);
 
 	    try {
 	        ReportManager.logToExtent("INFO", "Action logged");
@@ -373,7 +378,7 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 	    WebElement we = checkElement(driver, sTemp[1], sTemp[2]);
 
 	    try {
-	        waitTillElementVisible(driver, testObject, 15000);
+	        waitTillElementVisible(driver, testObject, 15);
 	        we.click();
 
 	        ReportManager.logToExtent("INFO", "Action logged");
@@ -381,13 +386,61 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 	        ExtentReporter.getTest().log(Status.PASS,
 	            "Click On - '" + sTemp[0] + "' | Clicked On - '" + sTemp[0] + "' - SUCCESSFUL");
 	    } catch (Exception e) {
-	        System.out.println(e.toString());
+	        log.info(e.toString());
 	        checkException(driver, e, "Click On - '" + sTemp[0] + "'");
 	    }
 
 	    sTemp = null;
 	    testObject = null;
 	}
+
+	/**
+	 * Condition-based replacement for document.readyState/jQuery.active
+	 * settle waits (mirrors driver.WebDriverFactory.waitForDocumentReady,
+	 * duplicated here since that one is package-private to the driver
+	 * package). Used after a click that triggers a page/step transition, in
+	 * place of a fixed sleep, so the next action proceeds the moment the
+	 * page is actually ready rather than always waiting the full duration.
+	 */
+	public void waitForPageSettled(WebDriver driver, int timeoutSeconds) {
+	    try {
+	        new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
+	                .until(d -> {
+	                    Object readyState = ((org.openqa.selenium.JavascriptExecutor) d)
+	                            .executeScript("return document.readyState");
+	                    if (!"complete".equals(readyState)) {
+	                        return false;
+	                    }
+	                    try {
+	                        Object jQueryActive = ((org.openqa.selenium.JavascriptExecutor) d)
+	                                .executeScript("return (typeof jQuery === 'undefined') ? 0 : jQuery.active");
+	                        return jQueryActive == null || Long.parseLong(jQueryActive.toString()) == 0;
+	                    } catch (Exception jqEx) {
+	                        return true; // no jQuery on this page - DOM ready is enough
+	                    }
+	                });
+	    } catch (org.openqa.selenium.TimeoutException te) {
+	        log.warn("waitForPageSettled timed out after " + timeoutSeconds + "s - continuing anyway.");
+	    }
+	}
+
+	/**
+	 * Replaces the repeated "click Next / sleep(3000)" x10 blocks found in
+	 * New1CPropertyOwners.java's multi-step wizard flow: clicks the given
+	 * button `times` times, waiting for the page to settle after each click
+	 * instead of a fixed sleep - condition-based, and exits as soon as the
+	 * page is actually ready rather than always waiting the full 3s/click.
+	 */
+	public void clickRepeatedly(WebDriver driver, String testObject, int times, int settleTimeoutSeconds) throws Exception {
+	    for (int i = 0; i < times; i++) {
+	    	System.out.print("---------------");
+	    	System.out.print(testObject);
+	    	System.out.print("---------------");
+	        click(driver, testObject);
+	        waitForPageSettled(driver, settleTimeoutSeconds);
+	    }
+	}
+	
 	
 	public void clickByJS(WebDriver driver, By obj) throws IOException, Exception {
 	    WebElement we = Initialize.getWebDriver().findElement(obj);
@@ -401,7 +454,7 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 	        ExtentReporter.getTest().log(Status.PASS,
 	            "Click On the element | Clicked On the element - SUCCESSFUL");
 	    } catch (Exception e) {
-	        System.out.println(e.toString());
+	        log.info(e.toString());
 	        checkException(driver, e, "Click On element is failed - " + obj);
 	    }
 	}
@@ -476,9 +529,9 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 
 	    if (Value.startsWith("#")) {
 	        String[] nValue = Value.split("#");
-	        System.out.println("nValue[1] is - " + nValue[1]);
+	        log.info("nValue[1] is - " + nValue[1]);
 	        Index = Integer.parseInt(nValue[1]);
-	        System.out.println("Index is - " + Index);
+	        log.info("Index is - " + Index);
 	    }
 
 	    SeleniumIdentifiers Identifier = SeleniumIdentifiers.valueOf(Identifiers);
@@ -571,10 +624,11 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 	}
 		
 		public void startTransaction() {
-			startTransactionTime = ReportManager.currentTimeInMillis();
-			ReportManager.logToExtent("INFO", "Action logged");
-			int startTransactionStep = stepCount;
-			System.out.println(startTransactionStep);
+		    startTransactionTime = ReportManager.currentTimeInMillis();
+		    ReportManager.logToExtent("INFO", "Action logged");
+
+		    int startTransactionStep = stepCount;
+		    log.info("Start Transaction Step: {}", startTransactionStep);
 		}
 		
 
@@ -654,8 +708,8 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 		    cal.add(Calendar.DAY_OF_MONTH, -1); // to get previous day add -1
 		    Date expiryDate = cal.getTime();
 
-		    System.out.println("today is --> " + today);
-		    System.out.println("expiryDate is --> " + expiryDate);
+		    log.info("today is --> " + today);
+		    log.info("expiryDate is --> " + expiryDate);
 
 		    if (expiryDate != null) {
 		        ReportManager.logToExtent("INFO", "Action logged");
@@ -683,14 +737,14 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 
 			} catch (Exception e) {
 				String vException = e.getMessage().toString();
-				// System.out.println("vException - " + vException);
+				// log.info("vException - " + vException);
 				if (vException.indexOf("(") != -1) {
 
 					// vException = vException.substring(11,
 					// vException.lastIndexOf("]")+1);
 					vException = vException.substring(0,
 							vException.indexOf("(") - 1);
-					System.out.println("Final Message - " + vException);
+					log.info("Final Message - " + vException);
 					ReportManager.logToExtent("INFO", "Action logged");
 					ReportManager.logToExtent("INFO", "Action logged");
 					Assert.fail("Exiting Script Execution");
@@ -705,7 +759,7 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 
 			String wdTextOut = wd.findElement(By.xpath(wdxPath)).getText();
 			//String wdTextOut="Provisioning";
-			System.out.println(wdTextOut+"****************************************");
+			log.info(wdTextOut+"****************************************");
 			if (wdTextOut.equals(wdText)) {
 				return "Pass";
 			} else {
@@ -760,7 +814,7 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 			String parentWindowHandle = wd.getWindowHandle();
 
 			Alert alert = wd.switchTo().alert();
-			// System.out.println(alert.getText());
+			// log.info(alert.getText());
 			alert.accept();
 			wd.switchTo().window(parentWindowHandle);
 
@@ -768,73 +822,54 @@ public void click(WebDriver driver, String testObject) throws IOException, Excep
 		
 
 		public void WaitForProgressBar(WebDriver wd, String sObject, int iTimeout) throws Exception {
-		    for (int second = 0;; second++) {
-		        if (second >= iTimeout)
-		            Assert.fail("Timeout - Progress Bar Still Exists After " + iTimeout + " seconds");
-		        try {
-		            if (!wd.findElement(By.id(sObject)).isDisplayed())
-		                break;
-		        } catch (Exception e) {
-		            checkException(Initialize.getWebDriver(), e, "");
-		        }
-		        Thread.sleep(1000);
+		    try {
+		        new org.openqa.selenium.support.ui.FluentWait<>(wd)
+		                .withTimeout(java.time.Duration.ofSeconds(iTimeout))
+		                .pollingEvery(java.time.Duration.ofMillis(500))
+		                .ignoring(org.openqa.selenium.NoSuchElementException.class)
+		                .until(d -> !d.findElement(By.id(sObject)).isDisplayed());
+		    } catch (org.openqa.selenium.TimeoutException te) {
+		        Assert.fail("Timeout - Progress Bar Still Exists After " + iTimeout + " seconds");
 		    }
 		}
 
 
 		public void WaitForObject(WebDriver wd, String oBjString, String xPath, int vTimeout) throws Exception {
-		    for (int second = 0; second <= vTimeout; second++) {
-		        String sTemp = null;
-
-		        if (wd.findElement(By.xpath(xPath)).getText() != null) {
-		            System.out.println("Inside getText()");
-		            sTemp = wd.findElement(By.xpath(xPath)).getText().trim();
-		            System.out.println("Text Is - " + sTemp);
-		            oBjString.equals(sTemp);
-		            break;
-		        } else if (wd.findElement(By.xpath(xPath)).getAttribute("id") != null) {
-		            System.out.println("Inside getAttribute(\"id\")");
-		            sTemp = wd.findElement(By.xpath(xPath)).getAttribute("id").trim();
-		            System.out.println("ID Is - " + sTemp);
-		            oBjString.equals(sTemp);
-		            break;
-		        } else if (wd.findElement(By.xpath(xPath)).getAttribute("name") != null) {
-		            System.out.println("Inside getAttribute(\"name\")");
-		            sTemp = wd.findElement(By.xpath(xPath)).getAttribute("name").trim();
-		            System.out.println("Name Is - " + sTemp);
-		            oBjString.equals(sTemp);
-		            break;
-		        } else if (wd.findElement(By.xpath(xPath)).getAttribute("value") != null) {
-		            System.out.println("Inside getAttribute(\"value\")");
-		            sTemp = wd.findElement(By.xpath(xPath)).getAttribute("value").trim();
-		            System.out.println("Value Is - " + sTemp);
-		            oBjString.equals(sTemp);
-		            break;
-		        } else {
-		            Assert.fail("Object did not appear after - " + vTimeout + " Seconds");
-		        }
-		        Thread.sleep(1000);
+		    try {
+		        new org.openqa.selenium.support.ui.FluentWait<>(wd)
+		                .withTimeout(java.time.Duration.ofSeconds(vTimeout))
+		                .pollingEvery(java.time.Duration.ofMillis(500))
+		                .ignoring(org.openqa.selenium.NoSuchElementException.class)
+		                .until(d -> {
+		                    WebElement el = d.findElement(By.xpath(xPath));
+		                    String sTemp = null;
+		                    if (el.getText() != null) {
+		                        sTemp = el.getText().trim();
+		                    } else if (el.getAttribute("id") != null) {
+		                        sTemp = el.getAttribute("id").trim();
+		                    } else if (el.getAttribute("name") != null) {
+		                        sTemp = el.getAttribute("name").trim();
+		                    } else if (el.getAttribute("value") != null) {
+		                        sTemp = el.getAttribute("value").trim();
+		                    }
+		                    return sTemp != null;
+		                });
+		    } catch (org.openqa.selenium.TimeoutException te) {
+		        Assert.fail("Object did not appear after - " + vTimeout + " Seconds");
 		    }
 		}
 		
-		
+
 
 		public void WaitForObject_Attribute(WebDriver wd, String oBjValue, String xPath, String vAttValue) throws Exception {
-		    for (int second = 0;; second++) {
-		        if (second >= 180)
-		            Assert.fail("Timeout - Object did not appear after 3 Minutes");
-
-		        try {
-		            String sTemp = null;
-		            if (oBjValue.equals(wd.findElement(By.xpath(xPath)).getAttribute(vAttValue))) {
-		                sTemp = wd.findElement(By.xpath(xPath)).getAttribute(vAttValue);
-		                System.out.println(vAttValue + " - value is - " + sTemp);
-		                break;
-		            }
-		        } catch (Exception e) {
-		            checkException(Initialize.getWebDriver(), e, "");
-		        }
-		        Thread.sleep(1000);
+		    try {
+		        new org.openqa.selenium.support.ui.FluentWait<>(wd)
+		                .withTimeout(java.time.Duration.ofSeconds(180))
+		                .pollingEvery(java.time.Duration.ofMillis(500))
+		                .ignoring(org.openqa.selenium.NoSuchElementException.class)
+		                .until(d -> oBjValue.equals(d.findElement(By.xpath(xPath)).getAttribute(vAttValue)));
+		    } catch (org.openqa.selenium.TimeoutException te) {
+		        Assert.fail("Timeout - Object did not appear after 3 Minutes");
 		    }
 		}
 		
@@ -887,7 +922,7 @@ public void verify(String TestObject, String Expected) throws IOException {
 	public void editAFieldUsingActions(WebDriver driver, String TestObject, String value) throws IOException {
 	    String[] sTemp = splitTestObject(driver, TestObject);
 	    WebElement we = checkElement(driver, sTemp[1], sTemp[2]);
-	    System.out.println("--Value : " + value);
+	    log.info("--Value : " + value);
 	    Actions act = new Actions(driver);
 
 	    try {
@@ -1028,17 +1063,10 @@ private void logSuccess(String key) {
 		Initialize.getWebDriver().navigate ().to ("javascript:document.getElementById('overridelink').click()");	
 	}
 
-	public void waitTime(long wdWait)
-	{
-		try {
-			Thread.sleep(wdWait);
-		} catch (InterruptedException e) 
-		{
-			checkException(Initialize.getWebDriver(), e,"");
-			System.out.println(e.getMessage());
-			e.printStackTrace();
-		}
-	}
+	// waitTime(long) removed - it was a raw Thread.sleep() wrapper with zero
+	// callers anywhere in the codebase (confirmed via search). If a static
+	// wait is ever tempting again, use waitTillElementVisible(...) or one of
+	// the FluentWait-based Wait* methods above instead.
 
 	public void compareText(WebDriver driver, String testObject, String expectedText) throws IOException {
 	    String[] sTemp = splitTestObject(driver, testObject);
@@ -1047,7 +1075,7 @@ private void logSuccess(String key) {
 	        WebElement element = checkElement(driver, sTemp[1], sTemp[2]);
 	        String actualText = element.getText() != null ? element.getText().trim() : "";
 
-	        System.out.println(actualText + "****************************************");
+	        log.info(actualText + "****************************************");
 
 	        if (actualText.equalsIgnoreCase(expectedText.trim())) {
 	            logResult(TestStatus.PASS, expectedText, actualText, true);
@@ -1150,7 +1178,7 @@ static void checkException(WebDriver driver, Exception e, String action) {
 		      .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
 		      .toString();
 		 
-		    System.out.println(generatedString);
+		    log.info(generatedString);
 			return generatedString;
 	}
 	public void ScreenPrint(WebDriver driver, HashMap<String, String> testData, String ScriptName,String ScreenName) throws IOException {
@@ -1248,29 +1276,29 @@ public void selectDropDownByVisibleText(WebDriver driver, String testObject, Str
         String tagName = we.getTagName();
 
         if (tagName.equalsIgnoreCase("select")) {
-            // ✅ Standard dropdown
+            // Standard dropdown
             Select objSelect = new Select(we);
             objSelect.selectByVisibleText(value);
-            System.out.println("Selected from standard dropdown: " + value);
+            log.info("Selected from standard dropdown: " + value);
         } else {
-            // ✅ Custom dropdown (e.g., Select2)
+            // Custom dropdown (e.g., Select2)
             we.click(); // Open dropdown
-            System.out.println("Clicked custom dropdown: " + sTemp[0]);
+            log.info("Clicked custom dropdown: " + sTemp[0]);
 
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
             String optionXpath = "//li[contains(@class,'select2-results__option') and normalize-space(text())='" + value + "']";
 
             WebElement option = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(optionXpath)));
             option.click();
-            System.out.println("Selected option: " + value);
+            log.info("Selected option: " + value);
         }
 
-        // ✅ Reporting success
+        // Reporting success
         ReportManager.logToExtent("INFO", "Action logged");
         ExtentReporter.getTest().log(Status.PASS, "Selected '" + sTemp[0] + "' value as " + value);
 
     } catch (Exception e) {
-        // ✅ Reporting failure
+        // Reporting failure
         checkException(driver, e, "Failed to select '" + sTemp[0] + "' value as " + value);
         ExtentReporter.getTest().log(Status.FAIL, "Dropdown selection failed for '" + sTemp[0] + "' due to: " + e.getMessage());
     }
@@ -1295,51 +1323,27 @@ public void compareString(List<WebElement> list, String expTxt) throws IOExcepti
 	    }
 	}	
 
-public void waitUntilElementNotVisible(WebDriver driver, By ele, int sec) throws Exception
-    {
-		for (int second = 0; ; second++)
-        {
-			try { 
-				WebElement element = Initialize.getWebDriver().findElement(ele);
-				if (second >= sec) 
-					break;
-	            	Boolean b = element.isDisplayed();
-	            	if (!b) 
-	            		break;
-			} catch (Exception e) { 
-            	break;
-            }
-            Thread.sleep(1000);
-        }
+public void waitUntilElementNotVisible(WebDriver driver, By ele, int sec) throws Exception {
+    try {
+        new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(sec))
+                .until(org.openqa.selenium.support.ui.ExpectedConditions.invisibilityOfElementLocated(ele));
+    } catch (org.openqa.selenium.TimeoutException te) {
+        // matches original behaviour: silently give up rather than fail the test
+    } catch (org.openqa.selenium.NoSuchElementException nse) {
+        // element never existed - equivalent to "not visible", nothing to do
     }
-	
+}
 
-	public void containsString(String Actual, String Expected) throws IOException {
-	    if (Actual.contains(Expected)) {
-	        ReportManager.logToExtent("INFO", "Action logged");
-	        ExtentReporter.getTest().log(Status.PASS, "Expected Value: " + Expected + " | Actual Value: " + Actual + " - Successful");
-	    } else {
-	        ReportManager.logToExtent("INFO", "Action logged");
-	        ExtentReporter.getTest().log(Status.FAIL, "Expected Value: " + Expected + " | Actual Value: " + Actual + " - Unsuccessful");
-	    }
-	}
-public void waitUntilElementVisible(WebDriver driver, By ele, int sec) throws Exception
-   {
-		for (int second = 0; ; second++)
-       {
-			try { 
-				WebElement element = Initialize.getWebDriver().findElement(ele);
-				if (second >= sec) 
-					Assert.fail("Error: Element still not visible");
-	            	Boolean b = element.isDisplayed();
-	            	if (b) 
-	            		break;
-			} catch (Exception e) { 
-           	continue;
-           }
-           Thread.sleep(1000);
-       }
-   }
+
+public void waitUntilElementVisible(WebDriver driver, By ele, int sec) throws Exception {
+    try {
+        new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(sec))
+                .until(org.openqa.selenium.support.ui.ExpectedConditions.visibilityOfElementLocated(ele));
+    } catch (org.openqa.selenium.TimeoutException te) {
+        Assert.fail("Error: Element still not visible");
+    }
+}
+
 	
 public void writeToExcel(String quoteNo) throws Exception {
 	    try (FileInputStream fis = new FileInputStream(new File(System.getProperty("user.dir") + "/TestData/QuoteNumbers.xls"));
@@ -1388,7 +1392,7 @@ public void selectDropDownByValue(WebDriver driver, String testObject, String va
 	    WebElement we = checkElement(driver, sTemp[1], sTemp[2]);
 
 	    try {
-	        waitTillElementVisible(driver, testObject, 15000);
+	        waitTillElementVisible(driver, testObject, 15);
 	        JavascriptExecutor executor = (JavascriptExecutor) driver;
 	        executor.executeScript("arguments[0].click();", we);
 
@@ -1396,7 +1400,7 @@ public void selectDropDownByValue(WebDriver driver, String testObject, String va
 	        ExtentReporter.getTest().log(Status.PASS, "Click On - '" + sTemp[0] + "' - Successful");
 
 	    } catch (Exception e) {
-	        System.out.println(e.toString());
+	        log.info(e.toString());
 	        checkException(driver, e, "Click On - '" + sTemp[0] + "'");
 	        ExtentReporter.getTest().log(Status.FAIL, "Failed to click on - '" + sTemp[0] + "' due to: " + e.getMessage());
 	    }
@@ -1500,7 +1504,7 @@ public void selectDropDownByValue(WebDriver driver, String testObject, String va
 public void uploadFile(WebDriver driver, String TestObject, String FilePath) throws IOException {
 	    String[] sTemp = splitTestObject(driver, TestObject);
 	    WebElement we = checkElement(driver, sTemp[1], sTemp[2]);
-	    System.out.println("--Value : " + FilePath);
+	    log.info("--Value : " + FilePath);
 	    try {
 	        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", we);
 	        we.isEnabled();
@@ -1638,7 +1642,7 @@ public String fullScreenPrint(WebDriver driver, Map<String, String> testData, St
     String screenshotPath = folderPath + File.separator + scriptName + "_" + screenName + ".PNG";
     ImageIO.write(fpScreenshot.getImage(), "PNG", new File(screenshotPath));
 
-    return screenshotPath; // ✅ Return the screenshot path
+    return screenshotPath; // Return the screenshot path
 }
 	public String getAppUrl(String urlType) throws Exception {
 		String env = System.getProperty("Environment");	
@@ -1657,17 +1661,41 @@ public String fullScreenPrint(WebDriver driver, Map<String, String> testData, St
 	public void rsaLoginWindow(WebDriver driver, HashMap<String, String> testData) throws Exception {
         //String strRSAEmail = testData.get("UserEmail");
         String strRSAEmail = getTestDataPF("UserEMail");
-        System.out.println("Usr_email "+strRSAEmail);
-        Thread.sleep(2000);
+        log.info("Usr_email "+strRSAEmail);
+        waitForConditionOrTimeout(5, () -> checkElementDisplayed(driver, getTestObjectPF("IBSUITE_rsaEmail")));
         if(checkElementDisplayed(driver, getTestObjectPF("IBSUITE_rsaEmail"))) {
-               Thread.sleep(2000);
                editAField(driver, getTestObjectPF("IBSUITE_rsaEmail"), strRSAEmail);
                click(driver, getTestObjectPF("IBSUITE_btnRsaNext")); 
-               Thread.sleep(1000);
+               waitForConditionOrTimeout(5, () -> !checkElementDisplayed(driver, getTestObjectPF("IBSUITE_btnRsaNext")));
         }
         else {
-               System.out.println("RSA Login is not displayed");
+               log.info("RSA Login is not displayed");
         }
+	}
+
+	/**
+	 * Generic condition-based wait for cases (like locators of unknown/mixed
+	 * type above) where building a raw By object would risk assuming the
+	 * wrong locator type. Uses FluentWait to poll the given condition rather
+	 * than a hand-rolled sleep loop. Never throws on timeout - matches the
+	 * original best-effort behaviour of the sleeps this replaces.
+	 */
+	private void waitForConditionOrTimeout(int timeoutSeconds, java.util.concurrent.Callable<Boolean> condition) {
+		try {
+			new org.openqa.selenium.support.ui.FluentWait<>("unused")
+					.withTimeout(java.time.Duration.ofSeconds(timeoutSeconds))
+					.pollingEvery(java.time.Duration.ofMillis(500))
+					.ignoring(Exception.class)
+					.until(ignored -> {
+						try {
+							return Boolean.TRUE.equals(condition.call());
+						} catch (Exception e) {
+							return false;
+						}
+					});
+		} catch (org.openqa.selenium.TimeoutException te) {
+			// best-effort - caller re-checks the real condition afterward anyway
+		}
 	}
 	
 	public void SwitchWindow(WebDriver wd, String windowTitle)
@@ -1869,12 +1897,12 @@ public boolean validatePDFContent(String filePath, Map<String, String> expectedV
         for (Map.Entry<String, String> entry : expectedValues.entrySet()) {
             String expectedValue = entry.getValue();
             if (expectedValue == null || expectedValue.trim().isEmpty()) {
-                System.out.println("Skipping null or empty expected value for key: " + entry.getKey());
+                log.info("Skipping null or empty expected value for key: " + entry.getKey());
                 continue;
             }
 
             if (!pdfText.contains(expectedValue)) {
-                System.out.println("Missing expected value: " + entry.getKey() + " -> " + expectedValue);
+                log.info("Missing expected value: " + entry.getKey() + " -> " + expectedValue);
                 document.close();
                 return false;
             }
@@ -1904,7 +1932,7 @@ public String getLatestDownloadedPDF(String downloadDirPath) {
     File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".pdf"));
 
     if (files == null || files.length == 0) {
-        System.out.println("No PDF files found in directory: " + downloadDirPath);
+        log.info("No PDF files found in directory: " + downloadDirPath);
         return null;
     }
 

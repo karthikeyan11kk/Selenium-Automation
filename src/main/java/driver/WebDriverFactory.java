@@ -1,5 +1,8 @@
 package driver;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -25,6 +28,8 @@ import java.util.concurrent.TimeUnit;
  * reference project.
  */
 public class WebDriverFactory {
+    private static final Logger log = LoggerFactory.getLogger(WebDriverFactory.class);
+
 
     private static volatile WebDriverFactory instance;
 
@@ -55,10 +60,10 @@ public class WebDriverFactory {
         // (a restore-session prompt, a second unrelated Edge window already
         // open, etc.) and needs a different fix entirely.
         int callNumber = createDriverCallCount.incrementAndGet();
-        System.out.println("=== WebDriverFactory.createDriver() call #" + callNumber
+        log.info("=== WebDriverFactory.createDriver() call #" + callNumber
                 + " on thread " + Thread.currentThread().getId() + " ===");
         if (callNumber > 1) {
-            System.err.println("WARNING: createDriver() called more than once in this JVM run! Stack trace:");
+            log.error("WARNING: createDriver() called more than once in this JVM run! Stack trace:");
             Thread.dumpStack();
         }
 
@@ -95,15 +100,15 @@ public class WebDriverFactory {
         // instead (this was a real, confirmed bug in an earlier version).
         String mainWindowHandle = driver.getWindowHandle();
         configureTimeouts(driver, threadId);
-        Thread.sleep(2000);
+        waitForDocumentReady(driver, 5);
         closeExtraPopupWindows(driver, threadId, mainWindowHandle);
         try {
             driver.manage().window().maximize();
         } catch (Exception e) {
-            System.err.println("[Thread-" + threadId + "] Failed to maximize window: " + e.getMessage());
+            log.error("[Thread-" + threadId + "] Failed to maximize window: " , e);
         }
 
-        System.out.println("[Thread-" + threadId + "] WebDriver created successfully (" + browser + ")");
+        log.info("[Thread-" + threadId + "] WebDriver created successfully (" + browser + ")");
         return driver;
     }
 
@@ -140,7 +145,7 @@ public class WebDriverFactory {
         try {
             WebDriverManager.chromedriver().setup();
         } catch (Exception e) {
-            System.out.println("[Thread-" + threadId + "] WebDriverManager failed, using system chromedriver");
+            log.info("[Thread-" + threadId + "] WebDriverManager failed, using system chromedriver");
         }
 
         return new ChromeDriver(chromeOptions);
@@ -164,7 +169,7 @@ public class WebDriverFactory {
         try {
             WebDriverManager.firefoxdriver().setup();
         } catch (Exception e) {
-            System.out.println("[Thread-" + threadId + "] WebDriverManager failed, using system geckodriver");
+            log.info("[Thread-" + threadId + "] WebDriverManager failed, using system geckodriver");
         }
 
         return new FirefoxDriver(firefoxOptions);
@@ -228,7 +233,7 @@ public class WebDriverFactory {
         System.setProperty("webdriver.edge.driver", edgeDriverPath);
 
         WebDriver driver = new EdgeDriver(edgeOptions);
-        System.out.println("[Thread-" + threadId + "] Edge browser initialized (driver: " + edgeDriverPath + ")");
+        log.info("[Thread-" + threadId + "] Edge browser initialized (driver: " + edgeDriverPath + ")");
         return driver;
     }
 
@@ -241,18 +246,18 @@ public class WebDriverFactory {
     }
 
     private static void verifyEdgeDriverVersionMatches(String edgeDriverPath) {
-        System.out.println("Checking msedgedriver.exe version against installed Edge...");
+        log.info("Checking msedgedriver.exe version against installed Edge...");
 
         String driverVersionOutput;
         try {
             driverVersionOutput = runCommand(edgeDriverPath, "--version");
         } catch (Exception e) {
-            System.err.println("Could not run '" + edgeDriverPath + " --version' to check its version "
+            log.error("Could not run '" + edgeDriverPath + " --version' to check its version "
                     + "(continuing without pre-check): " + e.getMessage());
             return;
         }
         Integer driverMajor = extractMajorVersion(driverVersionOutput);
-        System.out.println("msedgedriver.exe reports: " + driverVersionOutput.trim()
+        log.info("msedgedriver.exe reports: " + driverVersionOutput.trim()
                 + (driverMajor != null ? " (major version " + driverMajor + ")" : " (could not parse a version number)"));
 
         String edgeBinary = null;
@@ -265,7 +270,7 @@ public class WebDriverFactory {
             }
         }
         if (edgeBinary == null) {
-            System.err.println("Could not find msedge.exe at either standard install path - skipping "
+            log.error("Could not find msedge.exe at either standard install path - skipping "
                     + "version comparison (Selenium will attempt to launch regardless).");
             return;
         }
@@ -274,16 +279,16 @@ public class WebDriverFactory {
         try {
             edgeVersionOutput = runCommand(edgeBinary, "--version");
         } catch (Exception e) {
-            System.err.println("Could not run '" + edgeBinary + " --version' to check its version "
+            log.error("Could not run '" + edgeBinary + " --version' to check its version "
                     + "(continuing without pre-check): " + e.getMessage());
             return;
         }
         Integer edgeMajor = extractMajorVersion(edgeVersionOutput);
-        System.out.println("Installed Edge reports: " + edgeVersionOutput.trim()
+        log.info("Installed Edge reports: " + edgeVersionOutput.trim()
                 + (edgeMajor != null ? " (major version " + edgeMajor + ")" : " (could not parse a version number)"));
 
         if (driverMajor == null || edgeMajor == null) {
-            System.err.println("Could not parse a version number from one or both --version outputs above - "
+            log.error("Could not parse a version number from one or both --version outputs above - "
                     + "skipping the mismatch check.");
             return;
         }
@@ -300,11 +305,11 @@ public class WebDriverFactory {
                     + "  https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/\n"
                     + "  and REPLACE the file at " + edgeDriverPath + "\n"
                     + "================================================================\n";
-            System.err.println(banner);
+            log.error(banner);
             throw new IllegalStateException(banner);
         }
 
-        System.out.println("Driver and Edge versions match (" + driverMajor + ".x) - proceeding.");
+        log.info("Driver and Edge versions match (" + driverMajor + ".x) - proceeding.");
     }
 
     private static Integer extractMajorVersion(String versionOutput) {
@@ -342,7 +347,7 @@ public class WebDriverFactory {
             driver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS);
             driver.manage().timeouts().setScriptTimeout(30, TimeUnit.SECONDS);
         } catch (Exception e) {
-            System.err.println("[Thread-" + threadId + "] Failed to set timeouts: " + e.getMessage());
+            log.error("[Thread-" + threadId + "] Failed to set timeouts: " , e);
         }
     }
 
@@ -354,22 +359,34 @@ public class WebDriverFactory {
      */
     private static void closeExtraPopupWindows(WebDriver driver, long threadId, String mainWindowHandle) {
         try {
-            // Poll over up to ~5 seconds instead of one fixed 1.5s snapshot -
-            // a slow machine can take longer for a delayed popup (profile
-            // setup wizard, sync prompt) to actually appear, and the old
-            // single check could miss it, leaving it open and undetected.
-            Set<String> allWindows = driver.getWindowHandles();
-            for (int i = 0; i < 5 && allWindows.size() <= 1; i++) {
-                Thread.sleep(1000);
-                allWindows = driver.getWindowHandles();
+            // FluentWait polling for a second window to appear, up to 5s -
+            // replaces a fixed-interval Thread.sleep loop with a real,
+            // condition-based Selenium wait. In the common case (no popup
+            // ever appears) this legitimately times out after 5s having
+            // polled the whole way, same total wait as before but now via
+            // the framework's own wait abstraction rather than a hand-rolled
+            // sleep loop.
+            Set<String> allWindows;
+            try {
+                allWindows = new org.openqa.selenium.support.ui.FluentWait<>(driver)
+                        .withTimeout(java.time.Duration.ofSeconds(5))
+                        .pollingEvery(java.time.Duration.ofMillis(500))
+                        .ignoring(org.openqa.selenium.NoSuchWindowException.class)
+                        .until(d -> {
+                            Set<String> handles = d.getWindowHandles();
+                            return handles.size() > 1 ? handles : null;
+                        });
+            } catch (org.openqa.selenium.TimeoutException te) {
+                allWindows = driver.getWindowHandles(); // no second window ever appeared - expected/common case
             }
-            System.out.println("[Thread-" + threadId + "] Window count after polling: " + allWindows.size()
+
+            log.info("[Thread-" + threadId + "] Window count after polling: " + allWindows.size()
                     + " (handles: " + allWindows + ")");
             if (allWindows.size() <= 1) {
                 return;
             }
 
-            System.out.println("[Thread-" + threadId + "] Multiple windows detected (" + allWindows.size() + "), closing extras...");
+            log.info("[Thread-" + threadId + "] Multiple windows detected (" + allWindows.size() + "), closing extras...");
             String mainWindow = allWindows.contains(mainWindowHandle) ? mainWindowHandle : allWindows.iterator().next();
 
             int closedCount = 0;
@@ -377,21 +394,20 @@ public class WebDriverFactory {
                 if (!windowHandle.equals(mainWindow)) {
                     try {
                         driver.switchTo().window(windowHandle);
-                        System.out.println("[Thread-" + threadId + "] Closing extra window - title: '"
+                        log.info("[Thread-" + threadId + "] Closing extra window - title: '"
                                 + safeTitle(driver) + "', url: '" + safeUrl(driver) + "'");
-                        Thread.sleep(300);
                         driver.close();
                         closedCount++;
                     } catch (Exception e) {
-                        System.err.println("[Thread-" + threadId + "] Failed to close popup " + windowHandle + ": " + e.getMessage());
+                        log.error("[Thread-" + threadId + "] Failed to close popup " + windowHandle + ": " , e);
                     }
                 }
             }
 
             driver.switchTo().window(mainWindow);
-            System.out.println("[Thread-" + threadId + "] Closed " + closedCount + " popup window(s), back on main window.");
+            log.info("[Thread-" + threadId + "] Closed " + closedCount + " popup window(s), back on main window.");
         } catch (Exception e) {
-            System.err.println("[Thread-" + threadId + "] Popup handling error: " + e.getMessage());
+            log.error("[Thread-" + threadId + "] Popup handling error: " , e);
         }
     }
 
@@ -408,6 +424,40 @@ public class WebDriverFactory {
             return driver.getCurrentUrl();
         } catch (Exception e) {
             return "(unavailable)";
+        }
+    }
+
+    /**
+     * Condition-based replacement for a blind Thread.sleep after a
+     * navigation/launch: waits for document.readyState == "complete" (and,
+     * if jQuery is present on the page, for jQuery.active == 0 too - a
+     * standard combined signal that both the DOM and any in-flight AJAX
+     * calls have settled). Never throws - a timeout here just means "waited
+     * as long as reasonable, moving on", the same as a fixed sleep would,
+     * except this returns immediately once the page is actually ready
+     * instead of always waiting the full duration.
+     */
+    static void waitForDocumentReady(WebDriver driver, int timeoutSeconds) {
+        try {
+            new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(timeoutSeconds))
+                    .until(d -> {
+                        Object readyState = ((org.openqa.selenium.JavascriptExecutor) d)
+                                .executeScript("return document.readyState");
+                        boolean domReady = "complete".equals(readyState);
+                        if (!domReady) {
+                            return false;
+                        }
+                        try {
+                            Object jQueryActive = ((org.openqa.selenium.JavascriptExecutor) d)
+                                    .executeScript("return (typeof jQuery === 'undefined') ? 0 : jQuery.active");
+                            return jQueryActive == null || Long.parseLong(jQueryActive.toString()) == 0;
+                        } catch (Exception jqEx) {
+                            return true; // no jQuery on this page - DOM ready is enough
+                        }
+                    });
+        } catch (org.openqa.selenium.TimeoutException te) {
+            log.warn("waitForDocumentReady timed out after " + timeoutSeconds + "s - continuing anyway "
+                    + "(best-effort readiness check, not a hard requirement).");
         }
     }
 }

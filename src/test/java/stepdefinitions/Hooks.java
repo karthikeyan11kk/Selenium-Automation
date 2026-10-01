@@ -1,5 +1,8 @@
 package stepdefinitions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import pageclasses.LoginPage;
 import testutils.ScenarioContext;
 import testutils.TestDataLookup;
@@ -40,6 +43,8 @@ import java.util.Map;
  * per-thread driver+login instead.
  */
 public class Hooks {
+    private static final Logger log = LoggerFactory.getLogger(Hooks.class);
+
 
     @BeforeAll
     public static void setUpSuite() throws Exception {
@@ -51,14 +56,14 @@ public class Hooks {
 
         configureCustomTrustStoreIfSet();
 
-        System.out.println("Launching browser and logging in ONCE for the whole suite...");
+        log.info("Launching browser and logging in ONCE for the whole suite...");
         Initialize.initializeDriver(null);
 
         String landingUrl = Initialize.getTestDataPF("LoginUrl");
         new Common_Methods().openBrowser(Initialize.getWebDriver(), landingUrl);
 
         new LoginPage(Initialize.getWebDriver()).nigLogin(null);
-        System.out.println("Logged in successfully - this session will be reused for every test case.");
+        log.info("Logged in successfully - this session will be reused for every test case.");
 
         String homeUrl = Initialize.getTestDataPF("HomePageUrl");
         Initialize.getWebDriver().navigate().to(homeUrl);
@@ -82,7 +87,7 @@ public class Hooks {
             new Common_Methods().waitTillElementVisible(Initialize.getWebDriver(),
                     Initialize.getTestObjectPF("IBP_mouseoverToShop"), 20);
         } catch (Exception e) {
-            System.err.println("Home page readiness check timed out/failed (continuing anyway - this is a "
+            log.error("Home page readiness check timed out/failed (continuing anyway - this is a "
                     + "best-effort check, not a hard requirement): " + e.getMessage());
         }
     }
@@ -122,7 +127,7 @@ public class Hooks {
                 return; // not configured - use the JVM's own default trust store, do nothing
             }
             if (!new java.io.File(trustStorePath).exists()) {
-                System.err.println("customTrustStorePath is set to '" + trustStorePath
+                log.error("customTrustStorePath is set to '" + trustStorePath
                         + "' but that file doesn't exist - ignoring, Jira/Xray HTTPS calls will likely keep failing "
                         + "with a PKIX/certificate error until this is fixed.");
                 return;
@@ -131,9 +136,9 @@ public class Hooks {
             System.setProperty("javax.net.ssl.trustStore", trustStorePath);
             System.setProperty("javax.net.ssl.trustStorePassword",
                     trustStorePassword == null ? "" : trustStorePassword);
-            System.out.println("Custom trust store configured: " + trustStorePath);
+            log.info("Custom trust store configured: " + trustStorePath);
         } catch (Exception e) {
-            System.err.println("Could not configure custom trust store (continuing with JVM defaults): " + e.getMessage());
+            log.error("Could not configure custom trust store (continuing with JVM defaults): " , e);
         }
     }
 
@@ -151,11 +156,11 @@ public class Hooks {
             try {
                 Map<String, String> row = TestDataLookup.findRowByTestCaseName(testCaseName);
                 if (row != null && !"Yes".equalsIgnoreCase(row.get("Execution"))) {
-                    System.out.println("Execution=No for " + testCaseName + " - skipping (browser stays open, no re-login).");
+                    log.info("Execution=No for " + testCaseName + " - skipping (browser stays open, no re-login).");
                     return;
                 }
             } catch (Exception lookupEx) {
-                System.err.println("Could not check Execution flag for "
+                log.error("Could not check Execution flag for "
                         + testCaseName + " - proceeding anyway: " + lookupEx.getMessage());
             }
         }
@@ -181,10 +186,10 @@ public class Hooks {
             if (!alreadyOnHome) {
                 Initialize.getWebDriver().navigate().to(homeUrl);
                 waitForHomePageReady();
-                System.out.println("Reset to HomePageUrl for test case: " + testCaseName
+                log.info("Reset to HomePageUrl for test case: " + testCaseName
                         + " | Current URL: " + safeCurrentUrl(Initialize.getWebDriver()));
             } else {
-                System.out.println("Already on HomePageUrl for test case: " + testCaseName
+                log.info("Already on HomePageUrl for test case: " + testCaseName
                         + " - skipping redundant navigation.");
             }
         }
@@ -208,9 +213,9 @@ public class Hooks {
                     try {
                         String homeUrl = Initialize.getTestDataPF("HomePageUrl");
                         Initialize.getWebDriver().navigate().to(homeUrl);
-                        System.out.println("Recovery: Navigated to Home Page after failure.");
+                        log.info("Recovery: Navigated to Home Page after failure.");
                     } catch (Exception navEx) {
-                        System.err.println("Recovery navigation failed: " + navEx.getMessage());
+                        log.error("Recovery navigation failed: " , navEx);
                     }
                 }
                 onTestFailure(scenario);
@@ -234,24 +239,24 @@ public class Hooks {
     public static void tearDownSuite() {
         try {
             if (Initialize.getWebDriver() != null) {
-                System.out.println("Suite finished - closing the shared browser session.");
+                log.info("Suite finished - closing the shared browser session.");
                 Initialize.getWebDriver().quit();
                 Initialize.setWebDriver(null);
             }
         } catch (Exception e) {
-            System.err.println("Error closing WebDriver at end of suite: " + e.getMessage());
+            log.error("Error closing WebDriver at end of suite: " , e);
         }
 
         try {
             utils.ExtentManager.getReporter().flush();
         } catch (Exception e) {
-            System.err.println("Error flushing Extent report: " + e.getMessage());
+            log.error("Error flushing Extent report: " , e);
         }
 
         try {
             MailReportSender.sendReportEmail();
         } catch (Exception e) {
-            System.err.println("Error emailing report: " + e.getMessage());
+            log.error("Error emailing report: " , e);
         }
     }
 
@@ -260,7 +265,7 @@ public class Hooks {
         try {
             Map<String, String> testData = ScenarioContext.get();
             if (testData == null) {
-                System.err.println("No test data in ScenarioContext; skipping Jira failure reporting for: " + scenario.getName());
+                log.error("No test data in ScenarioContext; skipping Jira failure reporting for: " + scenario.getName());
                 return;
             }
 
@@ -273,7 +278,7 @@ public class Hooks {
             final String errorMessage = "Scenario failed: " + tcName;
 
             if (!"Yes".equalsIgnoreCase(testData.get("JiraExecution"))) {
-                System.out.println("JiraExecution=No for " + tcName + " - skipping Jira bug creation/reporting.");
+                log.info("JiraExecution=No for " + tcName + " - skipping Jira bug creation/reporting.");
                 if (ExtentReporter.getTest() != null) {
                     ExtentReporter.getTest().fail(errorMessage);
                 }
@@ -294,7 +299,7 @@ public class Hooks {
                 JiraIntegration.addComment(targetIssueKey, "Failure captured in bug " + bugKey + ": " + summary + "\n"
                         + "All failure evidence has been attached to the bug.\n" + "Bug Link: " + bugUrl);
             } else {
-                System.err.println("JiraKey (target issue) is empty; skipped posting the bug link comment.");
+                log.error("JiraKey (target issue) is empty; skipped posting the bug link comment.");
             }
 
             List<String> screenshotLinks = evidencePaths.stream()
@@ -306,7 +311,7 @@ public class Hooks {
                 try {
                     JiraIntegration.attachScreenshot(bugKey, path);
                 } catch (Exception attachEx) {
-                    System.err.println("Failed to attach evidence to bug " + bugKey + ": " + attachEx.getMessage());
+                    log.error("Failed to attach evidence to bug " + bugKey + ": " , attachEx);
                 }
             }
 
@@ -318,7 +323,7 @@ public class Hooks {
                     }
                 }
             } catch (Exception linkEx) {
-                System.err.println("Issue linking failed (Bug " + bugKey + " <-> TE " + teKey + "): " + linkEx.getMessage());
+                log.error("Issue linking failed (Bug " + bugKey + " <-> TE " + teKey + "): " , linkEx);
             }
 
             // Update the TEST issue's own workflow STATUS to Fail. This was
@@ -332,13 +337,13 @@ public class Hooks {
                     String failTransitionName = Initialize.getConfigValue("JiraFailTransitionName");
                     if (failTransitionName != null && !failTransitionName.isBlank()) {
                         JiraIntegration.transitionIssueByName(targetIssueKey, failTransitionName);
-                        System.out.println("Transitioned " + targetIssueKey + " to '" + failTransitionName + "'");
+                        log.info("Transitioned " + targetIssueKey + " to '" + failTransitionName + "'");
                     } else {
-                        System.err.println("JiraFailTransitionName not set in TestData.properties - "
+                        log.error("JiraFailTransitionName not set in TestData.properties - "
                                 + "skipping status transition for " + targetIssueKey);
                     }
                 } catch (Exception transitionEx) {
-                    System.err.println("Failed to transition " + targetIssueKey + " to Fail: " + transitionEx.getMessage());
+                    log.error("Failed to transition " + targetIssueKey + " to Fail: " , transitionEx);
                 }
             }
 
@@ -346,7 +351,7 @@ public class Hooks {
             try {
                 QPNumbersLogger.logDefect(product, tcName, bugKey, jiraBase + "browse/" + bugKey);
             } catch (Exception qEx) {
-                System.err.println("Failed to log defect in Q&P-Numbers.xls: " + qEx.getMessage());
+                log.error("Failed to log defect in Q&P-Numbers.xls: " , qEx);
             }
 
             // ALSO write the DefectID (and a Timestamp) directly into the
@@ -356,7 +361,7 @@ public class Hooks {
             try {
                 QPNumbersLogger.setDefectId(product, tcName, bugKey);
             } catch (Exception qEx) {
-                System.err.println("Failed to write DefectID into " + product + " sheet: " + qEx.getMessage());
+                log.error("Failed to write DefectID into " + product + " sheet: " , qEx);
             }
 
             if (ExtentReporter.getTest() != null) {
@@ -364,13 +369,13 @@ public class Hooks {
                         + "browse/" + targetIssueKey + "'>" + targetIssueKey + "</a> | Bug: " + bugKey);
             }
 
-            System.out.println("Jira Bug Created: " + bugKey
+            log.info("Jira Bug Created: " + bugKey
                     + " | Test issue (comment target): " + (targetIssueKey.isBlank() ? "-" : targetIssueKey)
                     + " | TE (plan): " + (teKey.isBlank() ? "-" : teKey)
                     + " | Evidence attached to bug: " + evidencePaths.size());
 
         } catch (Exception e) {
-            System.err.println("Jira Integration Failed: " + e.getMessage());
+            log.error("Jira Integration Failed: " , e);
         }
     }
 
@@ -379,7 +384,7 @@ public class Hooks {
         try {
             Map<String, String> testData = ScenarioContext.get();
             if (testData == null) {
-                System.err.println("No test data in ScenarioContext; skipping Jira success reporting for: " + scenario.getName());
+                log.error("No test data in ScenarioContext; skipping Jira success reporting for: " + scenario.getName());
                 return;
             }
 
@@ -387,7 +392,7 @@ public class Hooks {
             String jiraKey = testData.getOrDefault("JiraKey", "");
 
             if (!"Yes".equalsIgnoreCase(testData.get("JiraExecution"))) {
-                System.out.println("JiraExecution=No for " + tcName + " - skipping Jira comment/attachment.");
+                log.info("JiraExecution=No for " + tcName + " - skipping Jira comment/attachment.");
                 if (ExtentReporter.getTest() != null) {
                     ExtentReporter.getTest().pass("Test Passed.");
                 }
@@ -405,16 +410,16 @@ public class Hooks {
                     try {
                         JiraIntegration.attachScreenshot(jiraKey, path);
                     } catch (Exception e) {
-                        System.err.println("Failed to attach screenshot to Jira: " + e.getMessage());
+                        log.error("Failed to attach screenshot to Jira: " , e);
                     }
                 }
                 try {
                     JiraIntegration.addComment(jiraKey, "Test Case Executed for : " + tcName + " With Attached "
                             + screenshotPaths.size() + " screenshot(s).");
                 } catch (Exception e) {
-                    System.err.println("Failed to add comment to Jira: " + e.getMessage());
+                    log.error("Failed to add comment to Jira: " , e);
                 }
-                System.out.println("Attached " + screenshotPaths.size() + " screenshot(s) to Jira Issue: " + jiraKey);
+                log.info("Attached " + screenshotPaths.size() + " screenshot(s) to Jira Issue: " + jiraKey);
 
                 // Update the TEST issue's own workflow STATUS to Pass - same
                 // gap as the failure path had (see onTestFailure comment).
@@ -422,16 +427,16 @@ public class Hooks {
                     String passTransitionName = Initialize.getConfigValue("JiraPassTransitionName");
                     if (passTransitionName != null && !passTransitionName.isBlank()) {
                         JiraIntegration.transitionIssueByName(jiraKey, passTransitionName);
-                        System.out.println("Transitioned " + jiraKey + " to '" + passTransitionName + "'");
+                        log.info("Transitioned " + jiraKey + " to '" + passTransitionName + "'");
                     } else {
-                        System.err.println("JiraPassTransitionName not set in TestData.properties - "
+                        log.error("JiraPassTransitionName not set in TestData.properties - "
                                 + "skipping status transition for " + jiraKey);
                     }
                 } catch (Exception transitionEx) {
-                    System.err.println("Failed to transition " + jiraKey + " to Pass: " + transitionEx.getMessage());
+                    log.error("Failed to transition " + jiraKey + " to Pass: " , transitionEx);
                 }
             } else {
-                System.err.println("JiraKey not provided for passed test: " + tcName);
+                log.error("JiraKey not provided for passed test: " + tcName);
             }
 
             if (ExtentReporter.getTest() != null) {
@@ -440,7 +445,7 @@ public class Hooks {
                         + "browse/" + jiraKey + "'>" + jiraKey + "</a>");
             }
         } catch (Exception e) {
-            System.err.println("Jira Integration Failed on success: " + e.getMessage());
+            log.error("Jira Integration Failed on success: " , e);
         }
     }
 }

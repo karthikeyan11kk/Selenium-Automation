@@ -1,5 +1,8 @@
 package utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
 import jakarta.mail.PasswordAuthentication;
@@ -33,11 +36,13 @@ import java.util.Properties;
  * normal account password - Gmail rejects normal passwords for SMTP.
  */
 public class MailReportSender {
+    private static final Logger log = LoggerFactory.getLogger(MailReportSender.class);
+
 
     public static void sendReportEmail() throws Exception {
         String mailTo = safeGet("mailTo");
         if (mailTo == null || mailTo.isBlank()) {
-            System.out.println("mailTo not set in TestData.properties - skipping report email.");
+            log.info("mailTo not set in TestData.properties - skipping report email.");
             return;
         }
 
@@ -51,7 +56,7 @@ public class MailReportSender {
                 || username == null || username.isBlank()
                 || password == null || password.isBlank()
                 || from == null || from.isBlank()) {
-            System.err.println("SMTP settings incomplete in TestData.properties (need smtpHost, smtpPort, "
+            log.error("SMTP settings incomplete in TestData.properties (need smtpHost, smtpPort, "
                     + "smtpUsername, smtpPassword, mailFrom) - skipping report email.");
             return;
         }
@@ -94,13 +99,13 @@ public class MailReportSender {
             attachmentPart.attachFile(reportFile);
             multipart.addBodyPart(attachmentPart);
         } else {
-            System.err.println("Extent report not found at " + reportPath + " - sending email without attachment.");
+            log.error("Extent report not found at " + reportPath + " - sending email without attachment.");
         }
 
         message.setContent(multipart);
 
         Transport.send(message);
-        System.out.println("Report email sent to: " + mailTo);
+        log.info("Report email sent to: " + mailTo);
     }
 
     private static String safeGet(String key) {

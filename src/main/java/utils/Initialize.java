@@ -1,5 +1,8 @@
 package utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
@@ -16,6 +19,8 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Initialize {
+    private static final Logger log = LoggerFactory.getLogger(Initialize.class);
+
 
     // Thread-safe driver management
     private static ThreadLocal<WebDriver> driverThreadLocal = new ThreadLocal<>();
@@ -50,7 +55,10 @@ public class Initialize {
     // would throw FileNotFoundException the moment getTestObjectPF() was
     // called (i.e. on the very first login locator lookup), breaking the
     // whole automation right after the browser successfully launched.
-    private static final File IBP_PageObject = new File(IBP, "TestObjects.properties");
+    private static final File[] IBP_Files = { 
+            new File(IBP, "PoObject.properties"),
+            new File(IBP, "ShopObject.properties") 
+        };
 
     public enum updateValue {
         bName, tEndTime, execTime, execStatus
@@ -71,7 +79,7 @@ public class Initialize {
                         tempConfig.load(fis);
                     }
                     config = tempConfig;
-                    System.out.println("Config Loaded Successfully");
+                    log.info("Config Loaded Successfully");
                 }
             }
         }
@@ -101,8 +109,14 @@ public class Initialize {
 
     public static String getTestObjectPF(String KeyName) throws Exception {
         Properties prop = new Properties();
-        try (InputStream IP = new FileInputStream(IBP_PageObject.getAbsolutePath())) {
-            prop.load(IP);
+        String ProjName = "Intact";
+
+        if (ProjName.equalsIgnoreCase("Intact")) {
+            for (File file : IBP_Files) {
+                try (InputStream IP = new FileInputStream(file.getAbsolutePath())) {
+                    prop.load(IP);
+                }
+            }
         }
         return prop.getProperty(KeyName);
     }
@@ -129,7 +143,7 @@ public class Initialize {
             }
         }
 
-        System.out.println("[Thread-" + Thread.currentThread().getId() + "] Test Data Loaded: " + localTDMap.size() + " entries");
+        log.info("[Thread-" + Thread.currentThread().getId() + "] Test Data Loaded: " + localTDMap.size() + " entries");
     }
 
     public void readTestObject(String excelDataSheet, String sheetName) throws Exception {
@@ -158,7 +172,7 @@ public class Initialize {
             }
         }
 
-        System.out.println("[Thread-" + Thread.currentThread().getId() + "] Test Objects Loaded: " + localTOMap.size() + " entries");
+        log.info("[Thread-" + Thread.currentThread().getId() + "] Test Objects Loaded: " + localTOMap.size() + " entries");
     }
 
     private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
@@ -188,7 +202,7 @@ public class Initialize {
 
         if (value == null) {
             String errorMsg = "Key '" + key + "' not found in Test Data for Thread-" + Thread.currentThread().getId();
-            System.err.println(errorMsg);
+            log.error(errorMsg);
 
             ReportManager.writeToNotepad("FAIL", "Read Test Data From Hash Map",
                     "Check - '*KeyName*' Used As Parameter For Method - '*getTestData*' In Main Script. Key: " + key);
@@ -209,7 +223,7 @@ public class Initialize {
 
         if (value == null) {
             String errorMsg = "Key '" + KeyName + "' not found in Test Objects for Thread-" + Thread.currentThread().getId();
-            System.err.println(errorMsg);
+            log.error(errorMsg);
 
             ReportManager.writeToNotepad("FAIL", "Read Test Object From Hash Map",
                     "Check - '*KeyName*' Used As Parameter For Method - '*getTestObject*' In Main Script. Key: " + KeyName);
@@ -227,7 +241,7 @@ public class Initialize {
     public void clearHashMap() {
         TOMap.get().clear();
         TDMap.get().clear();
-        System.out.println("[Thread-" + Thread.currentThread().getId() + "] HashMaps cleared");
+        log.info("[Thread-" + Thread.currentThread().getId() + "] HashMaps cleared");
     }
 
     public static int getStepCount() {
@@ -303,7 +317,7 @@ public class Initialize {
                                 "<b>, Thread:</b> " + threadId);
             }
         } catch (Exception e) {
-            System.err.println("[Thread-" + threadId + "] Failed to create ExtentTest: " + e.getMessage());
+            log.error("[Thread-" + threadId + "] Failed to create ExtentTest: " , e);
         }
     }
 

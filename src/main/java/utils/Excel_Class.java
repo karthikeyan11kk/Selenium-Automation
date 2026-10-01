@@ -1,4 +1,7 @@
 package utils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
  
 import java.io.*;
 import java.math.BigDecimal;
@@ -21,6 +24,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.util.*;
 
 public class Excel_Class {
+    private static final Logger log = LoggerFactory.getLogger(Excel_Class.class);
+
 
     // Read entire sheet into HashMap<Integer, List<String>>
     public HashMap<Integer, List<String>> xlDataRead(String excelFilePath, String sheetName) throws IOException {
@@ -29,9 +34,9 @@ public class Excel_Class {
         Workbook workbook = WorkbookFactory.create(fis);
         Sheet sheet = workbook.getSheet(sheetName);
         if (sheet == null) {
-            System.err.println("Sheet '" + sheetName + "' not found in Excel file: " + excelFilePath);
+            log.error("Sheet '" + sheetName + "' not found in Excel file: " + excelFilePath);
             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
-                System.out.println("Available sheet: " + workbook.getSheetName(i));
+                log.info("Available sheet: " + workbook.getSheetName(i));
             }
             throw new RuntimeException("Invalid sheet name: " + sheetName);
         }
@@ -134,12 +139,12 @@ public HashMap<String, String> getData(String excelFilePath, String sheetName, S
                                 offset = -Integer.parseInt(value.split("-")[1].trim());
                             }
                         } catch (NumberFormatException e) {
-                            System.err.println("Invalid offset in placeholder: " + value);
+                            log.error("Invalid offset in placeholder: " + value);
                         }
                         Calendar cal = Calendar.getInstance();
                         cal.add(Calendar.DATE, offset);
                         value = new SimpleDateFormat("dd/MM/yyyy").format(cal.getTime());
-                        System.out.println("Resolved placeholder for key [" + key + "]: " + value);
+                        log.info("Resolved placeholder for key [" + key + "]: " + value);
                     }
 
                     dataMap.put(key, value);

@@ -1,5 +1,8 @@
 package utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -19,6 +22,8 @@ import java.util.Date;
  * sheets' structure at all - adds a new sheet only.
  */
 public class QPNumbersLogger {
+    private static final Logger log = LoggerFactory.getLogger(QPNumbersLogger.class);
+
 
     private static final String SHEET_NAME = "Defects";
     private static final String[] HEADERS = {"Timestamp", "Product", "TestCaseName", "DefectKey", "DefectURL"};
@@ -27,7 +32,7 @@ public class QPNumbersLogger {
         String path = Initialize.getQPNumbersFilePath();
         File file = new File(path);
         if (!file.exists()) {
-            System.err.println("Q&P-Numbers.xls not found at " + path + " - skipping defect log entry.");
+            log.error("Q&P-Numbers.xls not found at " + path + " - skipping defect log entry.");
             return;
         }
 
@@ -59,7 +64,7 @@ public class QPNumbersLogger {
         }
         workbook.close();
 
-        System.out.println("Logged defect " + defectKey + " for " + testCaseName + " into Q&P-Numbers.xls (Defects sheet)");
+        log.info("Logged defect " + defectKey + " for " + testCaseName + " into Q&P-Numbers.xls (Defects sheet)");
     }
 
     /**
@@ -74,7 +79,7 @@ public class QPNumbersLogger {
     public static void setDefectId(String product, String testCaseName, String defectKey) {
         try {
             if (product == null || (!"Shop".equalsIgnoreCase(product) && !"PO".equalsIgnoreCase(product))) {
-                System.err.println("setDefectId: unrecognized product '" + product
+                log.error("setDefectId: unrecognized product '" + product
                         + "' - expected 'Shop' or 'PO', skipping row-level DefectID write.");
                 return;
             }
@@ -89,10 +94,74 @@ public class QPNumbersLogger {
             commonMethods.excelWriteMethod(path, sheetName, rowIndex, "Timestamp",
                     new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
 
-            System.out.println("Wrote DefectID " + defectKey + " into " + sheetName + " sheet row for " + testCaseName);
+            log.info("Wrote DefectID " + defectKey + " into " + sheetName + " sheet row for " + testCaseName);
         } catch (Exception e) {
-            System.err.println("Failed to write DefectID into Q&P-Numbers.xls " + product + " sheet for "
+            log.error("Failed to write DefectID into Q&P-Numbers.xls " + product + " sheet for "
                     + testCaseName + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Reads back a value (QuoteNumber, PolicyNumber, etc.) from this test
+     * case's row in the Shop/PO sheet. Used by ProductFlowSteps' Then step
+     * to actually verify the business outcome (a quote/policy reference was
+     * genuinely captured) rather than just checking "no exception was
+     * thrown" - a flow that silently fails to capture a reference number,
+     * without Selenium itself throwing, would otherwise pass unnoticed.
+     * Returns null if the row or column doesn't exist / is blank.
+     */
+    public static String getRecordedValue(String product, String testCaseName, String columnHeader) {
+        try {
+            if (product == null || (!"Shop".equalsIgnoreCase(product) && !"PO".equalsIgnoreCase(product))) {
+                return null;
+            }
+            String sheetName = "Shop".equalsIgnoreCase(product) ? "Shop" : "PO";
+            String path = Initialize.getQPNumbersFilePath();
+            File file = new File(path);
+            if (!file.exists()) {
+                return null;
+            }
+
+            Workbook workbook;
+            try (FileInputStream fis = new FileInputStream(file)) {
+                workbook = WorkbookFactory.create(fis);
+            }
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet == null) {
+                workbook.close();
+                return null;
+            }
+
+            org.apache.poi.ss.usermodel.Row headerRow = sheet.getRow(0);
+            int colIndex = -1;
+            for (int c = 0; c < headerRow.getLastCellNum(); c++) {
+                org.apache.poi.ss.usermodel.Cell cell = headerRow.getCell(c);
+                if (cell != null && columnHeader.equalsIgnoreCase(cell.toString().trim())) {
+                    colIndex = c;
+                    break;
+                }
+            }
+            if (colIndex < 0) {
+                workbook.close();
+                return null;
+            }
+
+            String result = null;
+            for (int r = 1; r <= sheet.getLastRowNum(); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+                org.apache.poi.ss.usermodel.Cell nameCell = row.getCell(0);
+                if (nameCell != null && testCaseName.equalsIgnoreCase(nameCell.toString().trim())) {
+                    org.apache.poi.ss.usermodel.Cell valueCell = row.getCell(colIndex);
+                    result = valueCell == null ? null : valueCell.toString().trim();
+                    break;
+                }
+            }
+            workbook.close();
+            return (result == null || result.isEmpty()) ? null : result;
+        } catch (Exception e) {
+            log.error("Failed to read '" + columnHeader + "' for " + testCaseName + " from Q&P-Numbers.xls: " , e);
+            return null;
         }
     }
 }

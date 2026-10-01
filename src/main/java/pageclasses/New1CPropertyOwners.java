@@ -1,5 +1,8 @@
 package pageclasses;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.openqa.selenium.By;
@@ -10,6 +13,8 @@ import utils.Initialize;
 import utils.ExtentReporter;
 
 public class New1CPropertyOwners extends Initialize {
+    private static final Logger log = LoggerFactory.getLogger(New1CPropertyOwners.class);
+
 	
 	private Common_Methods commonMethods;	
 
@@ -91,19 +96,22 @@ public class New1CPropertyOwners extends Initialize {
 	    		int rowIndex = commonMethods.getNextAvailableRowIndex(Initialize.getQPNumbersFilePath(), "PO");	
 	    //Welcome Page------------------------------------------------------------------------------------------------
 	    				if(strExecution.equals("Yes")) {
-	    				commonMethods.scrollThePage(driver,"DOWN");
-	    				commonMethods.mouseHoverOnObjectAndClick(driver, getTestObjectPF("IBP_mouseoverToPropertyOwners"));
 	    //Page1-------------------------------------------------------------------------------------------------------
+	    	    		commonMethods.scrollThePage(driver,"DOWN");
+	    	    		commonMethods.mouseHoverOnObjectAndClick(driver, getTestObjectPF("IBP_mouseoverToPropertyOwners"));
+	    	    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_POgetQuote"), 15);
+	    	    		commonMethods.click(driver, getTestObjectPF("IBP_POgetQuote"));
+	    				
 	    				commonMethods.click(driver, getTestObjectPF("IBP_AddClientManually"));
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_CompanyName"),strCompanyName);
-	    				Thread.sleep(5000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-	    				Thread.sleep(10000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 5000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
+//	    				commonMethods.waitForPageSettled(driver, 8);
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
+//	    				commonMethods.waitForPageSettled(driver, 12);
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
+//	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 15);
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
 	    			
-	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 5000);
+	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 15);
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_CorrespondAdd"),strCorrespondanceAddress);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_ClklookupAdd"));
 	    				commonMethods.click(driver, getTestObjectPF("IBP_SelAddress"));
@@ -111,9 +119,9 @@ public class New1CPropertyOwners extends Initialize {
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_InputPhonenum"),strPhoneNumber);
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_BusinessYear"),strBusinessYearEstablishedatProperty);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_ClkdrpdwnAgencyNumber"));
-	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 5000);
+	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 15);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_sltAgencyNumber"));
-	    				commonMethods.editAField(driver, getTestObjectPF("IBP_Coverstartdate"),strCoverStartDate);
+	    				
 	    				commonMethods.fullScreenPrint(driver, testData,"New 1 C Property Owners", "PO First Page");
 	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	    //Page2--------------------------------------------------------------------------------------------------
@@ -131,40 +139,36 @@ public class New1CPropertyOwners extends Initialize {
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_POPremisesPostcode"),strCorrespondanceAddress);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POClklookupbutton"));
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POSelectAddress"));
-	    				Thread.sleep(2000);
+	    				commonMethods.waitForPageSettled(driver, 5);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POClkAddpremisebutton"));
-	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_POSelectResidential"), 5000);
+	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_POSelectResidential"), 15);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POSelectResidential"));
 	    				commonMethods.selectDropDownByVisibleText(driver, getTestObjectPF("IBP_POPrimiseTypeBunglow"), strPrimiseTypeBunglow);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POHMO_NO"));
 	    				commonMethods.selectDropDownByVisibleText(driver, getTestObjectPF("IBP_POPrimiseuse"), strPrimiseUsePrivateDwelling);
-	    				commonMethods.selectDropDownByVisibleText(driver, getTestObjectPF("IBP_POResidentialOccupanyType"), strResidentialOccupancy);
+	    						   				
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_PONumberofOccupants"),strNumberOfOccupants);
+	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_POOccupanyType"), 5);
+	    				commonMethods.selectDropDownByVisibleText(driver, getTestObjectPF("IBP_POOccupanyType"), strResidentialOccupancy);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_POPrimiseBuiltYear"),strPrimiseBuiltYear);
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_POPrimisePurchaseYear"),strPrimisePurchaseYear);
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_PONoOfConcreteFloors"),strNoOfConcreteFloor);
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_PONoOfWoodenFloors"),strNoOfWoodenFloor);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+	    				
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_POBuildingDeclaredValue"),strBuildingDeclaredValue);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
+	    				// Replaced 9x repeated "click Next / Thread.sleep(3000)" with one condition-based call - waits for the page to settle after each click instead of always sleeping the full 3s.
+	    				commonMethods.clickRepeatedly(driver, "IBP_clkNext", 9, 10);
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+//	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
+	    				
 	    				commonMethods.fullScreenPrint(driver, testData,"New 1 C Property Owners", "PO Fourth Page");
 	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	    	//Page5-------------------------------------------------------------------------------------------------------
@@ -175,7 +179,7 @@ public class New1CPropertyOwners extends Initialize {
 	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	    	//QuotePage--------------------------------------------------------------------------------------------------
 	    			String QuoteRef = driver.findElement(By.xpath("//p[text()='Quote Ref']/span")).getText();
-	    			System.out.println("Obtained Quote Ref ==>" + QuoteRef);
+	    			log.info("Obtained Quote Ref ==>" + QuoteRef);
 	    			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
 	    			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
 	    			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "TestCaseName", TestCaseName);
@@ -256,14 +260,14 @@ public class New1CPropertyOwners extends Initialize {
 	    //Page1-------------------------------------------------------------------------------------------------------
 	    				commonMethods.click(driver, getTestObjectPF("IBP_AddClientManually"));
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_CompanyName"),strCompanyName);
-	    				Thread.sleep(5000);
+	    				commonMethods.waitForPageSettled(driver, 8);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-	    				Thread.sleep(10000);
+	    				commonMethods.waitForPageSettled(driver, 12);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 5000);
+	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 15);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
 	    			
-	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 5000);
+	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 15);
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_CorrespondAdd"),strCorrespondanceAddress);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_ClklookupAdd"));
 	    				commonMethods.click(driver, getTestObjectPF("IBP_SelAddress"));
@@ -271,7 +275,7 @@ public class New1CPropertyOwners extends Initialize {
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_InputPhonenum"),strPhoneNumber);
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_BusinessYear"),strBusinessYearEstablishedatProperty);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_ClkdrpdwnAgencyNumber"));
-	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 5000);
+	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 15);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_sltAgencyNumber"));
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_Coverstartdate"),strCoverStartDate);
 	    				commonMethods.fullScreenPrint(driver, testData,"New 1 C Property Owners", "PO First Page");
@@ -291,9 +295,9 @@ public class New1CPropertyOwners extends Initialize {
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_POPremisesPostcode"),strCorrespondanceAddress);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POClklookupbutton"));
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POSelectAddress"));
-	    				Thread.sleep(2000);
+	    				commonMethods.waitForPageSettled(driver, 5);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POClkAddpremisebutton"));
-	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_POSelectResidential"), 5000);
+	    				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_POSelectResidential"), 15);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POSelectResidential"));
 	    				commonMethods.selectDropDownByVisibleText(driver, getTestObjectPF("IBP_POPrimiseTypeBunglow"), strPrimiseTypeBunglow);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_POHMO_NO"));
@@ -307,24 +311,8 @@ public class New1CPropertyOwners extends Initialize {
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_PONoOfWoodenFloors"),strNoOfWoodenFloor);
 	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	    				commonMethods.editAField(driver, getTestObjectPF("IBP_POBuildingDeclaredValue"),strBuildingDeclaredValue);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
-	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-	    				Thread.sleep(3000);
+	    				// Replaced 9x repeated "click Next / Thread.sleep(3000)" with one condition-based call - waits for the page to settle after each click instead of always sleeping the full 3s.
+	    				commonMethods.clickRepeatedly(driver, "IBP_clkNext", 9, 5);
 	    				commonMethods.fullScreenPrint(driver, testData,"New 1 C Property Owners", "PO Fourth Page");
 	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	    	//Page5-------------------------------------------------------------------------------------------------------
@@ -335,7 +323,7 @@ public class New1CPropertyOwners extends Initialize {
 	    				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	    	//QuotePage--------------------------------------------------------------------------------------------------
 	    			String QuoteRef = driver.findElement(By.xpath("//p[text()='Quote Ref']/span")).getText();
-	    			System.out.println("Obtained Quote Ref ==>" + QuoteRef);
+	    			log.info("Obtained Quote Ref ==>" + QuoteRef);
 	    			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
 	    			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
 	    			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "TestCaseName", TestCaseName);
@@ -382,19 +370,19 @@ public class New1CPropertyOwners extends Initialize {
 	    						}
 	    						
 	    						String PolicyNumber = driver.findElement(By.xpath("(//h1[@class='startTitle topTitle'])[2]")).getText();
-	    						System.out.println(PolicyNumber);
+	    						log.info(PolicyNumber);
 	    						String PolicyNo = PolicyNumber.substring(14);
-	    						System.out.println("Policy Number ==>" + PolicyNo);
+	    						log.info("Policy Number ==>" + PolicyNo);
 	    						commonMethods.fullScreenPrint(driver, testData, "New 1 C Property Owners", "Policy_Number_Page");
 	    						//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "PolicyNumber", PolicyNo);
 	    						//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "PolicyNumber", PolicyNo);
 	    						
 	    						commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "PolicyNumber", PolicyNo);
 	    						commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "Timestamp", new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date()));
-	    						System.out.println("-----Property Owner NB created Successfully-----");
+	    						log.info("-----Property Owner NB created Successfully-----");
 	    						commonMethods.scrollThePage(driver, "Top");
 	    						commonMethods.click(driver, getTestObjectPF("IBP_HomeButton"));
-	    						Thread.sleep(2000);
+	    						commonMethods.waitForPageSettled(driver, 5);
 	    						
 	    						
 	    					}
@@ -480,14 +468,14 @@ public class New1CPropertyOwners extends Initialize {
 //Page1-------------------------------------------------------------------------------------------------------
 				commonMethods.click(driver, getTestObjectPF("IBP_AddClientManually"));
 				commonMethods.editAField(driver, getTestObjectPF("IBP_CompanyName"),strCompanyName);
-				Thread.sleep(5000);
+				commonMethods.waitForPageSettled(driver, 8);
 				commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-				Thread.sleep(10000);
+				commonMethods.waitForPageSettled(driver, 12);
 				commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 5000);
+				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 15);
 				commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
 			
-				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 5000);
+				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 15);
 				commonMethods.editAField(driver, getTestObjectPF("IBP_CorrespondAdd"),strCorrespondanceAddress);
 				commonMethods.click(driver, getTestObjectPF("IBP_ClklookupAdd"));
 				commonMethods.click(driver, getTestObjectPF("IBP_SelAddress"));
@@ -495,7 +483,7 @@ public class New1CPropertyOwners extends Initialize {
 				commonMethods.editAField(driver, getTestObjectPF("IBP_InputPhonenum"),strPhoneNumber);
 				commonMethods.editAField(driver, getTestObjectPF("IBP_BusinessYear"),strBusinessYearEstablishedatProperty);
 				commonMethods.click(driver, getTestObjectPF("IBP_ClkdrpdwnAgencyNumber"));
-				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 5000);
+				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 15);
 				commonMethods.click(driver, getTestObjectPF("IBP_sltAgencyNumber"));
 				commonMethods.editAField(driver, getTestObjectPF("IBP_Coverstartdate"),strCoverStartDate);
 				commonMethods.fullScreenPrint(driver, testData,"New 1 C Property Owners", "PO First Page");
@@ -515,9 +503,9 @@ public class New1CPropertyOwners extends Initialize {
 				commonMethods.editAField(driver, getTestObjectPF("IBP_POPremisesPostcode"),strCorrespondanceAddress);
 				commonMethods.click(driver, getTestObjectPF("IBP_POClklookupbutton"));
 				commonMethods.click(driver, getTestObjectPF("IBP_POSelectAddress"));
-				Thread.sleep(2000);
+				commonMethods.waitForPageSettled(driver, 5);
 				commonMethods.click(driver, getTestObjectPF("IBP_POClkAddpremisebutton"));
-				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_POSelectResidential"), 5000);
+				commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_POSelectResidential"), 15);
 				commonMethods.click(driver, getTestObjectPF("IBP_POSelectResidential"));
 				commonMethods.selectDropDownByVisibleText(driver, getTestObjectPF("IBP_POPrimiseTypeBunglow"), strPrimiseTypeBunglow);
 				commonMethods.click(driver, getTestObjectPF("IBP_POHMO_NO"));
@@ -531,24 +519,8 @@ public class New1CPropertyOwners extends Initialize {
 				commonMethods.editAField(driver, getTestObjectPF("IBP_PONoOfWoodenFloors"),strNoOfWoodenFloor);
 				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 				commonMethods.editAField(driver, getTestObjectPF("IBP_POBuildingDeclaredValue"),strBuildingDeclaredValue);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
-				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
-				Thread.sleep(3000);
+				// Replaced 9x repeated "click Next / Thread.sleep(3000)" with one condition-based call - waits for the page to settle after each click instead of always sleeping the full 3s.
+				commonMethods.clickRepeatedly(driver, "IBP_clkNext", 9, 5);
 				commonMethods.fullScreenPrint(driver, testData,"New 1 C Property Owners", "PO Fourth Page");
 				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	//Page5-------------------------------------------------------------------------------------------------------
@@ -559,7 +531,7 @@ public class New1CPropertyOwners extends Initialize {
 				commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
 	//QuotePage--------------------------------------------------------------------------------------------------
 			String QuoteRef = driver.findElement(By.xpath("//p[text()='Quote Ref']/span")).getText();
-			System.out.println("Obtained Quote Ref ==>" + QuoteRef);
+			log.info("Obtained Quote Ref ==>" + QuoteRef);
 			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "QuoteNumber", QuoteRef);
 			//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "QuoteNumber", QuoteRef);
 			commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "TestCaseName", TestCaseName);
@@ -606,19 +578,19 @@ public class New1CPropertyOwners extends Initialize {
 						}
 						
 						String PolicyNumber = driver.findElement(By.xpath("(//h1[@class='startTitle topTitle'])[2]")).getText();
-						System.out.println(PolicyNumber);
+						log.info(PolicyNumber);
 						String PolicyNo = PolicyNumber.substring(14);
-						System.out.println("Policy Number ==>" + PolicyNo);
+						log.info("Policy Number ==>" + PolicyNo);
 						commonMethods.fullScreenPrint(driver, testData, "New 1 C Property Owners", "Policy_Number_Page");
 						//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "PolicyNumber", PolicyNo);
 						//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, TcName, "PolicyNumber", PolicyNo);
 						
 						commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "PolicyNumber", PolicyNo);
 						commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "PO", rowIndex, "Timestamp", new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date()));
-						System.out.println("-----Property Owner NB created Successfully-----");
+						log.info("-----Property Owner NB created Successfully-----");
 						commonMethods.scrollThePage(driver, "Top");
 						commonMethods.click(driver, getTestObjectPF("IBP_HomeButton"));
-						Thread.sleep(2000);
+						commonMethods.waitForPageSettled(driver, 5);
 						
 						
 					}

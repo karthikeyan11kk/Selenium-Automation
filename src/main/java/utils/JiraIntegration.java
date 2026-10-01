@@ -1,5 +1,8 @@
 package utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
@@ -32,6 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class JiraIntegration extends Initialize {
+    private static final Logger log = LoggerFactory.getLogger(JiraIntegration.class);
+
 
     // --- Config helpers ---
     private static String jiraBaseUrl() { 
@@ -68,10 +73,10 @@ private static JSONObject handleJsonResponse(CloseableHttpResponse response, Str
     int status = response.getCode();
     String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
 
-    System.out.println("Raw Jira Response for " + operation + ": " + body);
+    log.info("Raw Jira Response for " + operation + ": " + body);
 
     if (status >= 200 && status < 300) {
-        // ✅ If body is empty, return an empty JSON object
+        // If body is empty, return an empty JSON object
         if (body.isEmpty() || !body.trim().startsWith("{")) {
             return new JSONObject(); // Avoid JSONException
         }
@@ -159,7 +164,7 @@ public static String createIssue(String summary, String description, List<String
         if (issueKey.isEmpty()) {
             throw new RuntimeException("Jira createIssue succeeded but no 'key' returned: " + json.toString());
         }
-        System.out.println("✅ Jira Issue Created: " + issueKey);
+        log.info("Jira Issue Created: " + issueKey);
         return issueKey;
     }
 }
@@ -185,11 +190,11 @@ public static void addComment(String issueKey, String comment) throws Exception 
 
     try (CloseableHttpResponse response = client.execute(post)) {
         String rawResponse = EntityUtils.toString(response.getEntity());
-        System.out.println("Raw Jira Response: " + rawResponse);
+        log.info("Raw Jira Response: " + rawResponse);
 
-        // ✅ Parse JSON directly here instead of calling handleJsonResponse()
+        // Parse JSON directly here instead of calling handleJsonResponse()
         JSONObject json = new JSONObject(rawResponse);
-        System.out.println("✅ Comment added to Jira Issue: " + issueKey + " | Comment ID: " + json.optString("id"));
+        log.info("Comment added to Jira Issue: " + issueKey + " | Comment ID: " + json.optString("id"));
     }
 }
 
@@ -207,11 +212,11 @@ public static void attachScreenshot(String issueKey, String filePath) throws Exc
 
     File file = new File(filePath);
     if (!file.exists()) {
-        throw new IllegalArgumentException("❌ File not found: " + filePath);
+        throw new IllegalArgumentException("File not found: " + filePath);
     }
 
-    System.out.println("➡ Jira API Request: " + url);
-    System.out.println("➡ Attaching file: " + file.getAbsolutePath() + " (" + file.length() + " bytes)");
+    log.info("Jira API Request: " + url);
+    log.info("Attaching file: " + file.getAbsolutePath() + " (" + file.length() + " bytes)");
 
     HttpEntity entity = MultipartEntityBuilder.create()
             .addPart("file", new FileBody(file, ContentType.DEFAULT_BINARY, file.getName()))
@@ -220,12 +225,12 @@ public static void attachScreenshot(String issueKey, String filePath) throws Exc
 
     try (CloseableHttpResponse response = client.execute(post)) {
         String rawResponse = EntityUtils.toString(response.getEntity());
-        System.out.println("⬅ Jira API Response (" + response.getCode() + "): " + rawResponse);
+        log.info("⬅ Jira API Response (" + response.getCode() + "): " + rawResponse);
 
         if (response.getCode() >= 200 && response.getCode() < 300) {
-            System.out.println("✅ Attachment uploaded to Jira Issue: " + issueKey + " (" + file.getName() + ")");
+            log.info("Attachment uploaded to Jira Issue: " + issueKey + " (" + file.getName() + ")");
         } else {
-            System.err.println("❌ Failed to attach file to Jira Issue: " + issueKey + " | Status: " + response.getCode());
+            log.error("Failed to attach file to Jira Issue: " + issueKey + " | Status: " + response.getCode());
         }
     }
 }
@@ -246,7 +251,7 @@ public static void attachScreenshot(String issueKey, String filePath) throws Exc
 
         try (CloseableHttpResponse response = client.execute(post)) {
             handleJsonResponse(response, "transitionIssue");
-            System.out.println("✅ Transitioned Jira Issue: " + issueKey + " to ID: " + transitionId);
+            log.info("Transitioned Jira Issue: " + issueKey + " to ID: " + transitionId);
         }
     }
 
@@ -329,13 +334,13 @@ public static void addStepComment(String issueKey, String stepDescription) throw
 public static void addEvidencePath(String tcName, String filePath) {
     try {
         if (tcName == null || filePath == null) {
-            System.err.println("addEvidencePath called with a null argument (tcName=" + tcName
+            log.error("addEvidencePath called with a null argument (tcName=" + tcName
                     + ", filePath=" + filePath + ") - skipping, not failing the test for it.");
             return;
         }
         EVIDENCE_STORE.computeIfAbsent(tcName, k -> new CopyOnWriteArrayList<>()).add(filePath);
     } catch (Exception e) {
-        System.err.println("addEvidencePath failed for " + tcName + " (continuing - this must never fail the actual test): "
+        log.error("addEvidencePath failed for " + tcName + " (continuing - this must never fail the actual test): "
                 + e.getMessage());
     }
 }
@@ -430,7 +435,7 @@ public static void updateXrayStepResults(String testExecKey,
      overallStatus = anyStepFailed ? "FAILED" : "PASSED";
  }
  testObj.put("status", overallStatus);
- System.out.println("Xray overall test status for " + testKey + ": " + overallStatus);
+ log.info("Xray overall test status for " + testKey + ": " + overallStatus);
 
  testObj.put("steps", stepsArray);
  testsArray.put(testObj);
@@ -444,11 +449,11 @@ public static void updateXrayStepResults(String testExecKey,
      String raw = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
 
      // Log full response for diagnostics
-     System.out.println("Xray Step Update HTTP " + code + " | Response: " + raw);
+     log.info("Xray Step Update HTTP " + code + " | Response: " + raw);
 
      if (code == 401 || code == 403) {
          // Token expired/invalid -> refresh once and retry automatically
-         System.out.println("Xray token invalid/expired. Re-authenticating...");
+         log.info("Xray token invalid/expired. Re-authenticating...");
          String refreshed = obtainXrayBearerToken();
          HttpPost retry = new HttpPost(url);
          retry.setHeader("Content-Type", "application/json");
@@ -457,7 +462,7 @@ public static void updateXrayStepResults(String testExecKey,
          try (CloseableHttpResponse retryResp = client.execute(retry)) {
              int rCode = retryResp.getCode();
              String rRaw = retryResp.getEntity() != null ? EntityUtils.toString(retryResp.getEntity()) : "";
-             System.out.println("Xray Step Update (retry) HTTP " + rCode + " | Response: " + rRaw);
+             log.info("Xray Step Update (retry) HTTP " + rCode + " | Response: " + rRaw);
              if (rCode < 200 || rCode >= 300) {
                  throw new RuntimeException("Xray update failed after re-authenticate. HTTP " + rCode + " Body: " + rRaw);
              }
@@ -467,7 +472,7 @@ public static void updateXrayStepResults(String testExecKey,
          throw new RuntimeException("Xray update failed. HTTP " + code + " Body: " + raw);
      }
      // Success: Xray returns JSON; keep the log for traceability
-     System.out.println("✅ Xray step results updated for " + testKey + " in " + testExecKey);
+     log.info("Xray step results updated for " + testKey + " in " + testExecKey);
  }
 }
 
@@ -534,13 +539,13 @@ public static int getXrayStepCount(String testKey) throws Exception {
                 ? getTest.optJSONObject("testType").optString("name", "")
                 : "";
         if (!"Manual".equalsIgnoreCase(typeName)) {
-            System.out.println("Xray testType for " + testKey + " = " + typeName + " (not Manual).");
+            log.info("Xray testType for " + testKey + " = " + typeName + " (not Manual).");
             return 0;
         }
 
         JSONArray steps = getTest.optJSONArray("steps");
         int count = steps != null ? steps.length() : 0;
-        System.out.println("Xray design step count for " + testKey + " (issueId=" + issueId + ") = " + count);
+        log.info("Xray design step count for " + testKey + " (issueId=" + issueId + ") = " + count);
         return count;
     }
 }
@@ -573,7 +578,7 @@ public static void updateXrayManualSteps(String testExecKey, String testKey, Lis
         throw new IllegalArgumentException("Invalid payload: testKey must be a Test issue key (e.g., PVII-20672), "
                 + "not the Test Execution key (" + testExecKey + ").");
 
-    System.out.println("About to post Xray results :: testExecutionKey=" + testExecKey + " | testKey=" + testKey);
+    log.info("About to post Xray results :: testExecutionKey=" + testExecKey + " | testKey=" + testKey);
 
     int designStepCount;
     try {
@@ -598,9 +603,17 @@ public static void updateXrayManualSteps(String testExecKey, String testKey, Lis
     post.setHeader("Authorization", "Bearer " + token);
 
     JSONObject payload = new JSONObject().put("testExecutionKey", testExecKey);
-    JSONObject info = new JSONObject().put("summary", "Automated run - Cucumber")
-            .put("description", "Run from CI pipeline").put("startDate", java.time.Instant.now().toString());
-    payload.put("info", info);
+    // NOTE: deliberately NOT sending an "info" object (summary/description/
+    // startDate) here anymore. When testExecutionKey refers to an EXISTING
+    // Test Execution (which it always does in this project - TestExecutionKey
+    // is pre-configured in TestData.xls, never dynamically created), Xray
+    // Cloud's import/execution API tries to use "info" to update that
+    // issue's own Jira fields under the hood - and hit a real 400:
+    // "customfield_10975: Field cannot be set. It is not on the appropriate
+    // screen, or unknown." We don't need Xray to touch the execution's
+    // summary/description at all (it already has its own), we only need it
+    // to record test RESULTS (status + steps below) - omitting "info"
+    // avoids that update attempt entirely.
 
     JSONArray testsArray = new JSONArray();
     JSONObject testObj = new JSONObject().put("testKey", testKey);
@@ -619,7 +632,7 @@ public static void updateXrayManualSteps(String testExecKey, String testKey, Lis
         stepsArray.put(stepResult);
     }
     if (steps.size() != designStepCount) {
-        System.out.println("Adjusted execution steps to match design: provided=" + steps.size()
+        log.info("Adjusted execution steps to match design: provided=" + steps.size()
                 + " vs design=" + designStepCount + " -> emitted=" + designStepCount);
     }
 
@@ -641,10 +654,10 @@ public static void updateXrayManualSteps(String testExecKey, String testKey, Lis
     try (CloseableHttpResponse response = client.execute(post)) {
         int code = response.getCode();
         String raw = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
-        System.out.println("Xray Manual Step Update HTTP " + code + " | Response: " + raw);
+        log.info("Xray Manual Step Update HTTP " + code + " | Response: " + raw);
 
         if (code == 401 || code == 403) {
-            System.out.println("Xray token invalid/expired. Re-authenticating...");
+            log.info("Xray token invalid/expired. Re-authenticating...");
             String refreshed = obtainXrayBearerToken();
             HttpPost retry = new HttpPost(url);
             retry.setHeader("Content-Type", "application/json");
@@ -653,7 +666,7 @@ public static void updateXrayManualSteps(String testExecKey, String testKey, Lis
             try (CloseableHttpResponse retryResp = client.execute(retry)) {
                 int rCode = retryResp.getCode();
                 String rRaw = retryResp.getEntity() != null ? EntityUtils.toString(retryResp.getEntity()) : "";
-                System.out.println("Xray Manual Step Update (retry) HTTP " + rCode + " | Response: " + rRaw);
+                log.info("Xray Manual Step Update (retry) HTTP " + rCode + " | Response: " + rRaw);
                 if (rCode < 200 || rCode >= 300) {
                     throw new RuntimeException("Xray update failed after re-authenticate. HTTP " + rCode + " Body: " + rRaw);
                 }
@@ -665,7 +678,7 @@ public static void updateXrayManualSteps(String testExecKey, String testKey, Lis
             throw new RuntimeException("Xray update failed. HTTP " + code + " Body: " + raw);
         }
 
-        System.out.println("Xray manual step results updated for " + testKey + " in " + testExecKey
+        log.info("Xray manual step results updated for " + testKey + " in " + testExecKey
                 + " | overall status: " + overallStatus);
     }
 }
@@ -702,7 +715,7 @@ public static String obtainXrayBearerToken() throws Exception {
      String token = raw.replace("\"", "").trim();
      // Cache for reuse in current JVM
      System.setProperty("XrayBearerToken", token);
-     System.out.println("✅ Obtained Xray Bearer token.");
+     log.info("Obtained Xray Bearer token.");
      return token;
  }
 }
@@ -722,7 +735,7 @@ public static String getXrayAuthToken() throws Exception {
 
     try (CloseableHttpResponse response = client.execute(post)) {
         String token = EntityUtils.toString(response.getEntity()).replace("\"", "");
-        System.out.println("✅ Xray Auth Token: " + token);
+        log.info("Xray Auth Token: " + token);
         return token;
     }
 }
@@ -773,7 +786,7 @@ public static void updateDescriptionWithLinks(String issueKey, String tcName, St
     put.setEntity(new StringEntity(payload.toString(), ContentType.APPLICATION_JSON));
 
     try (CloseableHttpResponse response = client.execute(put)) {
-        System.out.println("✅ Jira description updated with screenshot links for issue: " + issueKey);
+        log.info("Jira description updated with screenshot links for issue: " + issueKey);
     }
 }
 
@@ -804,7 +817,7 @@ public static void linkIssues(String inwardIssueKey, String outwardIssueKey, Str
  post.setEntity(new StringEntity(payload.toString(), ContentType.APPLICATION_JSON));
  try (CloseableHttpResponse resp = client.execute(post)) {
      handleJsonResponse(resp, "issueLink");
-     System.out.println("✅ Linked " + inwardIssueKey + " ↔ " + outwardIssueKey + " (" + linkTypeName + ")");
+     log.info("Linked " + inwardIssueKey + " ↔ " + outwardIssueKey + " (" + linkTypeName + ")");
  }
 }
 

@@ -1,5 +1,8 @@
 package pageclasses;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.openqa.selenium.By;
@@ -10,6 +13,8 @@ import utils.JiraIntegration;
 import utils.ExtentReporter;
 
 public class New1CShop extends Initialize {
+    private static final Logger log = LoggerFactory.getLogger(New1CShop.class);
+
 
     private Common_Methods commonMethods;
   
@@ -33,7 +38,7 @@ public class New1CShop extends Initialize {
         if ("Yes".equalsIgnoreCase(testData.get("Renewal"))) {
             createRenewal(driver, testData,TestCaseName);
         }
-        System.out.println("QuoteFlag: " + testData.get("Quote") + ", PolicyFlag: " + testData.get("Policy"));
+        log.info("QuoteFlag: " + testData.get("Quote") + ", PolicyFlag: " + testData.get("Policy"));
     }
 
     private void createQuote(WebDriver driver, Map<String, String> testData, String TestCaseName) throws Exception {
@@ -89,27 +94,20 @@ public class New1CShop extends Initialize {
     //Welcome Page
     		commonMethods.scrollThePage(driver,"DOWN");
     		commonMethods.mouseHoverOnObjectAndClick(driver, getTestObjectPF("IBP_mouseoverToShop"));
-    		// FIX attempt for "Unable to find element - //div[@class='next']/a[text()='Get a quote']":
-    		// the hover above likely opens a dropdown/flyout menu, and this next
-    		// click used to fire immediately with zero wait for it to render -
-    		// a classic race condition. Added an explicit wait here; if the
-    		// element still isn't found after this, the locator itself likely
-    		// no longer matches the live page's DOM (a genuine app UI change)
-    		// rather than a timing issue, and needs verifying against the real
-    		// site directly.
-//    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_ShopgetQuote"), 10);
+    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_ShopgetQuote"), 15);
     		commonMethods.click(driver, getTestObjectPF("IBP_ShopgetQuote"));
     		
     //Page1-----------------------------------------------------------------------------------------------
     		commonMethods.click(driver, getTestObjectPF("IBP_AddClientManually"));
     		commonMethods.editAField(driver, getTestObjectPF("IBP_CompanyName"),strCompanyName);
-    		Thread.sleep(5000);
+    		// Removed a Thread.sleep(5000) here - the very next line already
+    		// does an explicit wait for IBP_CorrespondAdd to become visible,
+    		// which covers the same timing gap condition-based instead of blind.
 //    		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-//    		Thread.sleep(15000);
 //    		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-//    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 5000);
+//    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 15);
 //    		commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
-    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 5000);
+    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_CorrespondAdd"), 15);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_CorrespondAdd"),strCorrespondanceAddress);
     		commonMethods.click(driver, getTestObjectPF("IBP_ClklookupAdd"));
     		commonMethods.click(driver, getTestObjectPF("IBP_SelAddress"));
@@ -117,13 +115,13 @@ public class New1CShop extends Initialize {
     		commonMethods.editAField(driver, getTestObjectPF("IBP_InputPhonenum"),strPhoneNumber);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_BusinessYear"),strBusinessYearEstablishedatProperty);
     		commonMethods.click(driver, getTestObjectPF("IBP_ClkdrpdwnAgencyNumber"));
-    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 5000);
+    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_sltAgencyNumber"), 15);
     		commonMethods.click(driver, getTestObjectPF("IBP_sltAgencyNumber"));
 //    		commonMethods.editAField(driver, getTestObjectPF("IBP_Coverstartdate"),strCoverStartDate);
     		commonMethods.click(driver, getTestObjectPF("IBP_drpdwnTrade1"));
-    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_FillTrade1"), 5000);
+    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_FillTrade1"), 15);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_FillTrade1"), strTrade1);
-    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelTrade1"), 5000);
+    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelTrade1"), 15);
     		commonMethods.click(driver, getTestObjectPF("IBP_SelTrade1"));
     	;
     		
@@ -143,9 +141,8 @@ public class New1CShop extends Initialize {
     		commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
     //Page3-------------------------------------------------------------------------------------------------
        		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-//    		Thread.sleep(10000);
 //    		commonMethods.click(driver, getTestObjectPF("IBP_LegalTradingstatus"));
-    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 5000);
+    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelectLegalTrade"), 15);
     		commonMethods.click(driver, getTestObjectPF("IBP_SelectLegalTrade"));
     		commonMethods.editAField(driver, getTestObjectPF("IBP_NumberofEmployee"), strNumberofEmployees);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_Annualturnover"), strAnnualTurnover);
@@ -165,7 +162,7 @@ public class New1CShop extends Initialize {
     //Page5----------------------------------------------------------------------------------------------------
     		commonMethods.editAField(driver, getTestObjectPF("IBP_PercentageTurnover"), strPercentageTurnover);
     		commonMethods.mouseHoverOnObjectAndClick(driver, getTestObjectPF("IBP_PropListedBuilding"));
-    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelPropListedBuilding"), 5000);
+    		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelPropListedBuilding"), 15);
     		commonMethods.click(driver, getTestObjectPF("IBP_SelPropListedBuilding"));
     		commonMethods.editAField(driver, getTestObjectPF("IBP_GeneralContents"), strGeneralContents);
     		commonMethods.editAField(driver, getTestObjectPF("IBP_AllOtherStock"), strAllOtherStock);
@@ -181,9 +178,9 @@ public class New1CShop extends Initialize {
     		JiraIntegration.addEvidencePath(TestCaseName, screenshotPath);
     		commonMethods.click(driver, getTestObjectPF("IBP_clkNext"));
     //QuotePage--------------------------------------------------------------------------------------------------
-    		commonMethods.waitTillElementVisible(driver,getTestObjectPF("IBP_QuoteRef"),5000);
+    		commonMethods.waitTillElementVisible(driver,getTestObjectPF("IBP_QuoteRef"),50);
     		String QuoteRef = driver.findElement(By.xpath("//p[text()='Quote Ref']/span")).getText();
-    		System.out.println("Obtained Quote Ref ==>" + QuoteRef);
+    		log.info("Obtained Quote Ref ==>" + QuoteRef);
     		ExtentReporter.getTest().info("Quote Ref captured: " + QuoteRef);
     		//commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "QuoteNumber", QuoteRef);
     		commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "TestCaseName", TestCaseName);
@@ -206,7 +203,7 @@ public class New1CShop extends Initialize {
     private void createPolicy(WebDriver driver, Map<String, String> testData, String TestCaseName) throws Exception {
         // Policy steps
     	try {
-    		System.out.println(">>> Inside createPolicy()");
+    		log.info(">>> Inside createPolicy()");
     		 //Reuse the SAME row createQuote() wrote TestCaseName/QuoteNumber to,
     		 //instead of grabbing a fresh empty row (see the comment on
     		 //findOrCreateRowIndexByTestCaseName in Common_Methods.java for why
@@ -266,9 +263,9 @@ public class New1CShop extends Initialize {
     					}
     					
     					String PolicyNumber = driver.findElement(By.xpath("(//h1[@class='startTitle topTitle'])[2]")).getText();
-    					System.out.println(PolicyNumber);
+    					log.info(PolicyNumber);
     					String PolicyNo = PolicyNumber.substring(14);
-    					System.out.println("Policy Number ==>" + PolicyNo);
+    					log.info("Policy Number ==>" + PolicyNo);
     					ExtentReporter.getTest().info("Policy Number captured: " + PolicyNo);
     					//commonMethods.policyNumber = PolicyNo; // Store it for later use
     					//commonMethods.fullScreenPrint(driver, testData, "New 1 C Shop", "Policy_Number_Page");
@@ -279,7 +276,7 @@ public class New1CShop extends Initialize {
     					commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "PolicyNumber", PolicyNo);
     					commonMethods.excelWriteMethod(Initialize.getQPNumbersFilePath(), "Shop", rowIndex, "Timestamp",
     							new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date()));
-    					System.out.println("-----Property Owner NB created Successfully-----");			
+    					log.info("-----Property Owner NB created Successfully-----");			
     		}
     		catch (Exception e) {
     		    String screenshotPath = Common_Methods.takeScreenshot(driver);
@@ -325,9 +322,9 @@ public class New1CShop extends Initialize {
     			commonMethods.click(driver, getTestObjectPF("IBP_rnwl_AmendRenewalQuote"));
     			
     			commonMethods.click(driver, getTestObjectPF("IBP_drpdwnTrade1"));
-        		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_FillTrade1"), 5000);
+        		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_FillTrade1"), 15);
         		commonMethods.editAField(driver, getTestObjectPF("IBP_FillTrade1"), strRenewalAmendTrade);
-        		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelTrade1"), 5000);
+        		commonMethods.waitTillElementVisible(driver, getTestObjectPF("IBP_SelTrade1"), 15);
         		commonMethods.click(driver, getTestObjectPF("IBP_SelTrade1"));
         		screenshotPath = commonMethods.fullScreenPrint(driver, testData, "New 1 C Shop", "Shop Renewal Amend Trade Page");
         		JiraIntegration.addEvidencePath(TestCaseName, screenshotPath);

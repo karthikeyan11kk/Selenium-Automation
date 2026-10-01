@@ -1,5 +1,8 @@
 package WebApp.TestCases;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -23,6 +26,8 @@ import java.util.Base64;
 import java.util.List;
 
 public class JiraTestExecutor extends Initialize {
+    private static final Logger log = LoggerFactory.getLogger(JiraTestExecutor.class);
+
 
     // ---- Config helpers ----
     static String jiraBaseUrl()           { return Initialize.getConfigValue("JiraURL"); }
@@ -51,7 +56,7 @@ public class JiraTestExecutor extends Initialize {
             for (int i = 0; i < issues.length(); i++) {
                 keys.add(issues.getJSONObject(i).getString("key"));
             }
-            System.out.println("✅ Jira Test Cases fetched: " + keys);
+            log.info("Jira Test Cases fetched: " + keys);
             return keys;
         }
     }
@@ -68,7 +73,7 @@ public class JiraTestExecutor extends Initialize {
      * Returns true if every scenario for that tag passed (exit code 0).
      */
     public static boolean executeTest(String jiraKey) {
-        System.out.println("Executing Cucumber scenarios tagged @JIRA-" + jiraKey);
+        log.info("Executing Cucumber scenarios tagged @JIRA-" + jiraKey);
 
         String[] args = new String[]{
                 "--glue", "hooks",
@@ -93,23 +98,23 @@ public static void updateJiraStatus(String jiraKey, String status) throws Except
     // 2) Drain & attach all evidence collected during the test run
 
 List<String> evidencePaths = JiraIntegration.drainEvidence(jiraKey);
-System.out.println("🔍 Evidence list for " + jiraKey + ": " + evidencePaths);
+log.info("Evidence list for " + jiraKey + ": " + evidencePaths);
 
 if (evidencePaths != null && !evidencePaths.isEmpty()) {
     for (String path : evidencePaths) {
         File f = new File(path);
-        System.out.println("📂 Checking evidence: " + path + " exists? " + f.exists() +
+        log.info("Checking evidence: " + path + " exists? " + f.exists() +
                            " | size=" + (f.exists() ? f.length() : 0));
         if (f.exists()) {
-            System.out.println("➡ Attaching evidence to " + jiraKey + ": " + path);
+            log.info("Attaching evidence to " + jiraKey + ": " + path);
             JiraIntegration.attachScreenshot(jiraKey, path);
-            System.out.println("✅ Attached: " + path);
+            log.info("Attached: " + path);
         } else {
-            System.err.println("❌ File not found: " + path);
+            log.error("File not found: " + path);
         }
     }
 } else {
-    System.out.println("ℹ No evidence collected for " + jiraKey + " to attach.");
+    log.info("ℹ No evidence collected for " + jiraKey + " to attach.");
 }
 
 
@@ -130,7 +135,7 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
             JiraIntegration.transitionIssue(jiraKey, transitionId);
         }
     } catch (Exception tEx) {
-        System.err.println("Transition failed for " + jiraKey + ": " + tEx.getMessage());
+        log.error("Transition failed for " + jiraKey + ": " , tEx);
     }
 
     // 4) Extent link (unchanged)
@@ -138,7 +143,7 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
     if (ExtentReporter.getTest() != null) {
         ExtentReporter.getTest().info("Jira Issue: <a href='" + jiraLink + "'>" + jiraKey + "</a>");
     }
-    System.out.println("✅ Jira updated for " + jiraKey + " with status: " + status);
+    log.info("Jira updated for " + jiraKey + " with status: " + status);
 }
 
 
@@ -181,7 +186,7 @@ if (evidencePaths != null && !evidencePaths.isEmpty()) {
                     updateJiraStatus(jiraKey, "FAIL");
                     logJiraLink(jiraKey);
                     ExtentReporter.getTest().fail("Test Failed for Jira Key: " + jiraKey + " | Error: " + e.getMessage());
-                    System.err.println("❌ Execution failed for " + jiraKey + ": " + e.getMessage());
+                    log.error("Execution failed for " + jiraKey + ": " , e);
                 }
             }
         } finally {
