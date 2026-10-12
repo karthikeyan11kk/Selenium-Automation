@@ -30,10 +30,33 @@
         </suiteXmlFiles>
         <systemPropertyVariables>
 						<javax.net.ssl.trustStore>
-							C:\Users\P00962\New-eclipse-workspace\Intact-Automation\Certs\cacerts</javax.net.ssl.trustStore>
+							C:\Users\P00962\New-eclipse-workspace\Intact-BDD\Certs\cacerts</javax.net.ssl.trustStore>
 						<javax.net.ssl.trustStorePassword>changeit</javax.net.ssl.trustStorePassword>
 		</systemPropertyVariables>
     </configuration>
+</plugin>
+
+<!-- exec-maven-plugin: lets the pipeline run the Feature 1 upload UI with a
+     single command before "mvn test", without needing a separate runnable
+     jar: mvn -q compile exec:java@upload-ui  (see README.md "Feature 1"). -->
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <version>3.1.0</version>
+    <executions>
+        <execution>
+            <id>upload-ui</id>
+            <!-- no <phase> set deliberately - only runs when explicitly
+                 invoked as exec:java@upload-ui, never during a normal
+                 mvn test/build lifecycle. -->
+            <goals>
+                <goal>java</goal>
+            </goals>
+            <configuration>
+                <mainClass>utils.TestDataUploadServer</mainClass>
+            </configuration>
+        </execution>
+    </executions>
 </plugin>
 
             <plugin>
