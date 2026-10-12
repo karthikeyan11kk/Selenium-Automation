@@ -19,45 +19,72 @@ import java.util.Date;
 import java.util.Properties;
 
 /**
- * Emails the Extent HTML report to a configured list of recipients after
- * the suite finishes (called from Hooks.tearDownSuite()). Fully optional -
- * if "mailTo" isn't set in TestData.properties, this just logs a message
- * and returns, so it never blocks or breaks a run for anyone who hasn't
- * configured SMTP yet.
+ * Emails the final execution report out once the suite finishes (called from
+ * Hooks.tearDownSuite()).
+ *
+ * Feature 5 - "once the entire execution is completed I need to send mail
+ * using outlook to the to mail id and CC mail id mentioned in the test
+ * data.properties."
+ *
+ * Sending "using Outlook" from an unattended Maven/pipeline run means going
+ * through Outlook's own SMTP relay (Office 365 / Outlook.com), the same way
+ * Outlook itself hands mail off when you hit Send - there is no portable,
+ * headless way to drive the Outlook desktop application's own send button
+ * from a CI agent. So by default this now points at smtp.office365.com, and
+ * mailProvider=Outlook in TestData.properties documents that choice (set it
+ * to anything else, e.g. Gmail, and smtpHost/smtpPort below still override
+ * freely for teams not on Outlook/Office365).
  *
  * Required TestData.properties keys to actually send mail:
- *   smtpHost, smtpPort, smtpUsername, smtpPassword, mailFrom, mailTo
- * mailTo supports multiple recipients, comma-separated.
- * mailSubject is optional (has a sensible default).
+ *   mailTo, smtpUsername, smtpPassword, mailFrom
+ *   (smtpHost/smtpPort default to Outlook/Office365 if left blank - see
+ *   resolveSmtpHost()/resolveSmtpPort())
+ * mailTo / mailCC both support multiple recipients, comma-separated.
+ * mailCC is optional - leave blank to send with no CC.
  *
- * For Gmail specifically: smtpHost=smtp.gmail.com, smtpPort=587, and
- * smtpPassword must be a 16-character Google "App Password" (Google
- * Account -> Security -> 2-Step Verification -> App passwords), NOT your
- * normal account password - Gmail rejects normal passwords for SMTP.
+ * For Outlook/Office365: smtpHost=smtp.office365.com, smtpPort=587, and
+ * smtpUsername/smtpPassword are the same Outlook/Office365 account
+ * credentials used to sign in to Outlook (an App Password if the tenant has
+ * MFA enforced - Outlook rejects a normal interactive password for SMTP in
+ * that case, same restriction as Gmail's App Passwords).
  */
 public class MailReportSender {
     private static final Logger log = LoggerFactory.getLogger(MailReportSender.class);
 
+    private static final String DEFAULT_OUTLOOK_HOST = "smtp.office365.com";
+    private static final String DEFAULT_OUTLOOK_PORT = "587";
 
+    /** Back-compat overload - sends with no execution-package attachment. */
     public static void sendReportEmail() throws Exception {
+        sendReportEmail(null);
+    }
+
+    /**
+     * @param executionZipPath absolute path to the Feature-2 execution
+     *                         package zip (per-test-case screenshots/report
+     *                         folders + overall report + Excel summary), or
+     *                         null/blank if it wasn't built this run.
+     */
+    public static void sendReportEmail(String executionZipPath) throws Exception {
         String mailTo = safeGet("mailTo");
         if (mailTo == null || mailTo.isBlank()) {
             log.info("mailTo not set in TestData.properties - skipping report email.");
             return;
         }
 
-        String host = safeGet("smtpHost");
-        String port = safeGet("smtpPort");
+        String mailCC = safeGet("mailCC");
+
+        String host = resolveSmtpHost();
+        String port = resolveSmtpPort();
         String username = safeGet("smtpUsername");
         String password = safeGet("smtpPassword");
-        String from = safeGet("mailFrom");
+        String from = safeGetOrDefault("mailFrom", username);
 
-        if (host == null || host.isBlank() || port == null || port.isBlank()
-                || username == null || username.isBlank()
+        if (username == null || username.isBlank()
                 || password == null || password.isBlank()
                 || from == null || from.isBlank()) {
-            log.error("SMTP settings incomplete in TestData.properties (need smtpHost, smtpPort, "
-                    + "smtpUsername, smtpPassword, mailFrom) - skipping report email.");
+            log.error("SMTP settings incomplete in TestData.properties (need at least smtpUsername, "
+                    + "smtpPassword, mailFrom) - skipping report email.");
             return;
         }
 
@@ -75,37 +102,76 @@ public class MailReportSender {
 
         MimeMessage message = new MimeMessage(session);
         message.setFrom(new InternetAddress(from));
-        for (String recipient : mailTo.split(",")) {
-            String trimmed = recipient.trim();
-            if (!trimmed.isEmpty()) {
-                message.addRecipient(Message.RecipientType.TO, new InternetAddress(trimmed));
-            }
+        addRecipients(message, Message.RecipientType.TO, mailTo);
+        if (mailCC != null && !mailCC.isBlank()) {
+            addRecipients(message, Message.RecipientType.CC, mailCC);
         }
 
         String subject = safeGetOrDefault("mailSubject", "Automation Test Execution Report");
         message.setSubject(subject + " - " + new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()));
 
         MimeBodyPart textPart = new MimeBodyPart();
-        textPart.setText("Hi,\n\nThe automated test run has completed. Please find the Extent report attached.\n\n"
+        textPart.setText("Hi,\n\nThe automated test run has completed. Please find attached:\n"
+                + " - The overall Extent execution report\n"
+                + " - The full execution package (per test case screenshots + report folder, "
+                + "step-wise results, quote/policy numbers and any defect IDs)\n\n"
                 + "Regards,\nAutomation Framework");
 
         MimeMultipart multipart = new MimeMultipart();
         multipart.addBodyPart(textPart);
 
         String reportPath = System.getProperty("user.dir") + File.separator + "Testresults" + File.separator + "ExtentReport.html";
-        File reportFile = new File(reportPath);
-        if (reportFile.exists()) {
-            MimeBodyPart attachmentPart = new MimeBodyPart();
-            attachmentPart.attachFile(reportFile);
-            multipart.addBodyPart(attachmentPart);
+        attachIfExists(multipart, reportPath, "ExtentReport.html");
+
+        if (executionZipPath != null && !executionZipPath.isBlank()) {
+            attachIfExists(multipart, executionZipPath, new File(executionZipPath).getName());
         } else {
-            log.error("Extent report not found at " + reportPath + " - sending email without attachment.");
+            log.info("No execution package zip path provided - sending email without the zip attachment.");
         }
 
         message.setContent(multipart);
 
         Transport.send(message);
-        log.info("Report email sent to: " + mailTo);
+        log.info("Report email sent via " + host + " to: " + mailTo
+                + (mailCC != null && !mailCC.isBlank() ? " | CC: " + mailCC : ""));
+    }
+
+    private static void addRecipients(MimeMessage message, Message.RecipientType type, String commaSeparated) throws Exception {
+        for (String recipient : commaSeparated.split(",")) {
+            String trimmed = recipient.trim();
+            if (!trimmed.isEmpty()) {
+                message.addRecipient(type, new InternetAddress(trimmed));
+            }
+        }
+    }
+
+    private static void attachIfExists(MimeMultipart multipart, String filePath, String attachmentName) throws Exception {
+        File file = new File(filePath);
+        if (file.exists() && file.isFile()) {
+            MimeBodyPart attachmentPart = new MimeBodyPart();
+            attachmentPart.attachFile(file);
+            attachmentPart.setFileName(attachmentName);
+            multipart.addBodyPart(attachmentPart);
+        } else {
+            log.error("Expected attachment not found at " + filePath + " - skipping that attachment.");
+        }
+    }
+
+    /** smtpHost in TestData.properties always wins if set; otherwise defaults to Outlook/Office365. */
+    private static String resolveSmtpHost() {
+        String configured = safeGet("smtpHost");
+        if (configured != null && !configured.isBlank()) {
+            return configured.trim();
+        }
+        return DEFAULT_OUTLOOK_HOST;
+    }
+
+    private static String resolveSmtpPort() {
+        String configured = safeGet("smtpPort");
+        if (configured != null && !configured.isBlank()) {
+            return configured.trim();
+        }
+        return DEFAULT_OUTLOOK_PORT;
     }
 
     private static String safeGet(String key) {

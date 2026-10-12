@@ -30,4 +30,9 @@ public class PageObjectManager {
     public New1CPropertyOwners getNew1CPropertyOwners() {
         return new New1CPropertyOwners();
     }
+
+    /** Feature 3: dedicated Shop renewal page class, switch-cased on the "Renewal Execution" column. */
+    public ShopRenewal getShopRenewal() {
+        return new ShopRenewal();
+    }
 }

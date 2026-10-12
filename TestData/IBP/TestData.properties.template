@@ -1,0 +1,67 @@
+ProjectName=New1C
+browser=edge
+Group=test
+FolderName=IBP_Automation
+UserEMail=
+LoginUserName=
+LoginPassword=
+AccessRestricted=
+LoginUrl=https://intact.uat.uk.acturis.com/AWE-G/
+HomePageUrl=https://intact.uat.uk.acturis.com/AWE-G/Container.aspx?CurrentWorkflow=Login&CurrentStep=Login
+activeSheets=New1CShop,New1CPropertyOwners,New1COffice
+JiraURL=
+JiraEmail=
+JiraAPItoken=
+JiraProjectKey=
+XrayClientId=
+XrayClientSecret=
+
+# Jira workflow transition NAMES (not IDs) used to update the Jira test
+# issue's own status on pass/fail - these must match real transition names
+# in YOUR Jira project's workflow exactly (case doesn't matter, but the name
+# must exist).
+JiraPassTransitionName=Done
+JiraFailTransitionName=Failed
+
+# Xray Test Run status (the colored PASS/FAIL squares in the Xray Test Run
+# view) - a DIFFERENT thing from the Jira issue workflow status above.
+XrayPassStatus=PASSED
+XrayFailStatus=FAILED
+
+# Custom trust store for corporate proxy/firewall SSL inspection. Leave
+# blank/unset to use the JVM's own default trust store (most environments).
+#customTrustStorePath=C:\\path\\to\\customtruststore.jks
+#customTrustStorePassword=changeit
+
+# ---------------------------------------------------------------------------
+# Feature 5: email the final execution report via Outlook once the whole
+# suite finishes. Leave mailTo blank/unset to skip emailing entirely.
+mailProvider=Outlook
+mailTo=
+mailCC=
+smtpHost=smtp.office365.com
+smtpPort=587
+smtpUsername=
+smtpPassword=
+mailFrom=
+mailSubject=Automation Test Execution Report
+
+# Root folder for all screenshots (one subfolder per TestCaseName_Timestamp
+# created underneath it). Leave commented to use <project root>/Screenshots.
+#screenshotsRootDir=C:\\path\\to\\your\\Screenshots
+
+# ---------------------------------------------------------------------------
+# Feature 1: the local "upload your TestData file" web UI (utils.TestDataUploadServer)
+# run before "mvn test" in the pipeline - see README.md "Feature 1" section.
+uploadServerPort=9090
+uploadServerTimeoutMinutes=15
+
+# ---------------------------------------------------------------------------
+# Feature 2: execution package zip - see README.md "Feature 2" section.
+autoOpenReportZip=No
+
+# Optional path overrides (leave commented to use the defaults under TestData/)
+#testDataFilePath=C:\\path\\to\\TestData.xls
+#qpNumbersFilePath=C:\\path\\to\\Q&P-Numbers.xls
+#downloadDir=C:\\path\\to\\Downloads
+#edgeDriverPath=C:\\path\\to\\msedgedriver.exe

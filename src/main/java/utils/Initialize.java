@@ -57,7 +57,7 @@ public class Initialize {
     // whole automation right after the browser successfully launched.
     private static final File[] IBP_Files = { 
             new File(IBP, "PoObject.properties"),
-            new File(IBP, "ShopObject.properties") 
+            new File(IBP, "ShopObject.properties") ,            
         };
 
     public enum updateValue {

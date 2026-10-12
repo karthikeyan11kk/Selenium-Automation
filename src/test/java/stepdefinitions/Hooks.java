@@ -253,8 +253,19 @@ public class Hooks {
             log.error("Error flushing Extent report: " , e);
         }
 
+        // Feature 2: build the per-test-case screenshot+report folders,
+        // the per-test-case Excel workbook (step-wise status, quote/policy
+        // number, defect ID) and the overall execution report into a single
+        // zip - produced automatically, every run, no manual step needed.
+        String executionZipPath = null;
         try {
-            MailReportSender.sendReportEmail();
+            executionZipPath = utils.ExecutionPackager.buildPackage();
+        } catch (Exception e) {
+            log.error("Error building execution package zip: " , e);
+        }
+
+        try {
+            MailReportSender.sendReportEmail(executionZipPath);
         } catch (Exception e) {
             log.error("Error emailing report: " , e);
         }
